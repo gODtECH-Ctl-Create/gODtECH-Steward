@@ -4,6 +4,13 @@ import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+const packageMetadata = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8"));
+const expectedVersion = packageMetadata?.version;
+assertVersion(expectedVersion);
+
+function assertVersion(value) {
+  if (typeof value !== "string" || value.length === 0) throw new Error("package.json must define a non-empty version for package verification.");
+}
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, { stdio: "pipe", encoding: "utf8", ...options });
@@ -62,13 +69,15 @@ try {
 
   run(npmCommand, ["install", "--offline", "--no-package-lock", "--ignore-scripts", tarball], { cwd: install });
   const packageRoot = join(install, "node_modules", "@godtech", "steward");
+  const installedPackage = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
+  assert(installedPackage.version === expectedVersion, `Installed package version ${installedPackage.version} does not match package.json version ${expectedVersion}.`);
   const cli = join(packageRoot, "dist", "src", "cli.js");
   const stewardBin = join(install, "node_modules", ".bin", process.platform === "win32" ? "steward.cmd" : "steward");
   const godtechStewardBin = join(install, "node_modules", ".bin", process.platform === "win32" ? "godtech-steward.cmd" : "godtech-steward");
   const actionRunner = join(packageRoot, "action-runner.cjs");
 
   const version = runInstalledBin(stewardBin, ["--version"], fixture);
-  assert(version === "0.1.0", `Installed steward binary returned unexpected version: ${version}`);
+  assert(version === expectedVersion, `Installed steward binary returned unexpected version: ${version}`);
   const aliasVersion = runInstalledBin(godtechStewardBin, ["--version"], fixture);
   assert(aliasVersion === version, "The godtech-steward alias does not resolve to the same version as steward.");
 
