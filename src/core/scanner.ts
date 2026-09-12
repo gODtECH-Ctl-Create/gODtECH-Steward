@@ -1,6 +1,6 @@
 import { performance } from "node:perf_hooks";
-import { resolve } from "node:path";
-import { collectFiles } from "./files.js";
+import { relative, resolve } from "node:path";
+import { collectFiles, normalisePath } from "./files.js";
 import { loadConfig } from "./config.js";
 import { gitFacts } from "./git.js";
 import { enabledRules } from "./rules.js";
@@ -21,6 +21,19 @@ function ruleCounts(findings: readonly Finding[]): Record<string, number> {
     counts[finding.rule] = (counts[finding.rule] ?? 0) + 1;
     return counts;
   }, {});
+}
+
+function scopedTrackedFiles(root: string, gitRoot: string | undefined, tracked: ReadonlySet<string>): Set<string> {
+  if (!gitRoot || resolve(root) === resolve(gitRoot)) return new Set(tracked);
+  const scoped = new Set<string>();
+  for (const path of tracked) {
+    const absolute = resolve(gitRoot, path);
+    const relativePath = relative(root, absolute);
+    if (relativePath === "" || (relativePath !== ".." && !relativePath.startsWith(`..${require("node:path").sep}`))) {
+      scoped.add(normalisePath(relativePath));
+    }
+  }
+  return scoped;
 }
 
 function configFinding(message: string): Finding {
@@ -44,7 +57,8 @@ export async function scanRepository(inputRoot: string): Promise<ScanResult> {
   const config = loaded.config;
   const git = gitFacts(root);
   const files = await collectFiles(root, config);
-  const context: ScanContext = { root, config, files, trackedFiles: git.trackedFiles, git };
+  const scopedTracked = scopedTrackedFiles(root, git.root, git.trackedFiles);
+  const context: ScanContext = { root, config, files, trackedFiles: scopedTracked, git: { ...git, trackedFiles: scopedTracked } };
   const findings: Finding[] = [];
 
   if (loaded.warning) findings.push(configFinding(loaded.warning));
@@ -81,7 +95,7 @@ export async function scanRepository(inputRoot: string): Promise<ScanResult> {
     findings,
     healthScore: scoreFindings(findings),
     durationMs: Math.max(0, Math.round(performance.now() - start)),
-    git,
+    git: context.git,
     categoryCounts: categoryCounts(findings),
     ruleCounts: ruleCounts(findings)
   };
