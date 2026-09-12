@@ -5,11 +5,11 @@ import type { Finding, ScanContext, StewardRule } from "../core/types.js";
 const MARKDOWN_LINK = /!?(?:\[[^\]]*\])\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g;
 
 function isSkippable(target: string): boolean {
-  return /^(?:https?:\/\/|mailto:|tel:|data:|#)/i.test(target);
+  return /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(target) || target.startsWith("#");
 }
 
-function stripFragment(target: string): string {
-  return target.split("#", 1)[0] ?? target;
+function stripFragmentAndQuery(target: string): string {
+  return target.split(/[?#]/, 1)[0] ?? target;
 }
 
 export const documentationRule: StewardRule = {
@@ -26,7 +26,7 @@ export const documentationRule: StewardRule = {
         const rawTarget = match[1];
         if (!rawTarget || isSkippable(rawTarget)) continue;
         try {
-          const target = decodeURIComponent(stripFragment(rawTarget));
+          const target = decodeURIComponent(stripFragmentAndQuery(rawTarget));
           if (!target || target.startsWith("/")) continue;
           const base = resolve(context.root, file.relPath, "..");
           const absolute = resolve(base, target);
