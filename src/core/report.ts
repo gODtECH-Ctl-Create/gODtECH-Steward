@@ -2,6 +2,7 @@ import type { Category, Finding, ScanResult, Severity } from "./types.js";
 
 const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info"];
 const CATEGORIES: Category[] = ["repository", "security", "documentation", "dependencies", "git", "configuration", "code"];
+export const STEWARD_RESULT_SCHEMA_VERSION = 1 as const;
 
 function countBySeverity(findings: readonly Finding[]): Record<Severity, number> {
   return SEVERITIES.reduce((result, severity) => {
@@ -12,7 +13,16 @@ function countBySeverity(findings: readonly Finding[]): Record<Severity, number>
 
 export function toJson(result: ScanResult): string {
   const { trackedFiles: _trackedFiles, ...gitReport } = result.git;
-  return JSON.stringify({ ...result, git: gitReport }, null, 2);
+  return JSON.stringify(
+    {
+      schemaVersion: STEWARD_RESULT_SCHEMA_VERSION,
+      tool: "gODtECH Steward",
+      ...result,
+      git: gitReport,
+    },
+    null,
+    2,
+  );
 }
 
 export function toText(result: ScanResult): string {
@@ -24,7 +34,7 @@ export function toText(result: ScanResult): string {
     result.git.isRepository
       ? `Git ${result.git.branch ?? "detached"} @ ${(result.git.commit ?? "unknown").slice(0, 8)}${result.git.dirty ? " | dirty" : ""}`
       : "Git repository: not detected",
-    ""
+    "",
   ];
 
   if (result.findings.length === 0) {
