@@ -97,7 +97,7 @@ function canonicalise(value: unknown): string {
   const entries = Object.entries(value)
     .filter(([key]) => key !== "signature")
     .sort(([left], [right]) => left.localeCompare(right));
-  return `{${entries.map(([key, entry]) => `${JSON.stringify(key)}:${canonicalise(entry)}`).join(",`)}}`;
+  return `{${entries.map(([key, entry]) => `${JSON.stringify(key)}:${canonicalise(entry)}`).join(",")}}`;
 }
 
 export function manifestSigningBytes(manifest: RulePackManifest): Buffer {
