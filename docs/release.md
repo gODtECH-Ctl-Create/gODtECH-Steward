@@ -30,7 +30,12 @@ Environment: none
 
 The workflow requires OpenID Connect (OIDC) token permission and publishes with `npm publish --access public`. Current npm Trusted Publishing requires a recent npm CLI and Node.js 22.14.0 or newer; Steward's release workflow uses Node.js 24.x.
 
-Do not add an npm automation token to the repository for publishing. Trusted Publishing provides short-lived credentials and, for a public GitHub repository and public package, npm automatically generates package provenance attestations. urlcitehttps://docs.npmjs.com/trusted-publishers/
+Do not add an npm automation token to the repository for publishing. Trusted Publishing provides short-lived credentials and, for a public GitHub repository and public package, npm automatically generates package provenance attestations.
+
+Official references:
+
+- https://docs.npmjs.com/trusted-publishers/
+- https://docs.npmjs.com/generating-provenance-statements/
 
 ## Release sequence
 
@@ -57,11 +62,16 @@ There are two complementary trust records:
 
 ### npm provenance
 
-npm Trusted Publishing uses OpenID Connect and automatically generates provenance for public packages published from supported public repositories. The provenance links the package to its source and build workflow. urlcitehttps://docs.npmjs.com/trusted-publishers/
+npm Trusted Publishing uses OpenID Connect and automatically generates provenance for public packages published from supported public repositories. The provenance links the package to its source and build workflow.
 
 ### GitHub artifact attestation
 
-The release workflow also creates a GitHub artifact attestation for the actual npm tarball using `actions/attest@v4`. A second attestation binds the tarball to its SPDX SBOM. GitHub's attestation service uses Sigstore-backed signing for these records. urlcitehttps://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations urlcitehttps://github.com/actions/attest
+The release workflow also creates a GitHub artifact attestation for the actual npm tarball using `actions/attest@v4`. A second attestation binds the tarball to its SPDX SBOM. GitHub's attestation service uses Sigstore-backed signing for these records.
+
+Official reference:
+
+- https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations
+- https://github.com/actions/attest
 
 This is intentionally keyless release signing. We are not inventing or storing a long-lived GPG private key in GitHub Actions.
 
@@ -96,7 +106,11 @@ Consumers can verify the tarball digest locally with:
 sha256sum -c SHA256SUMS
 ```
 
-Consumers using the GitHub Command Line Interface (CLI) can additionally verify the artifact attestation published with the release. GitHub supports attestation verification through `gh attestation verify`. urlcitehttps://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/verify-artestations-offline
+Consumers using the GitHub Command Line Interface (CLI) can additionally verify the artifact attestation published with the release. GitHub supports attestation verification through `gh attestation verify` and offline verification.
+
+Official reference:
+
+- https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/verify-attestations-offline
 
 ## GitHub Action reference policy
 
