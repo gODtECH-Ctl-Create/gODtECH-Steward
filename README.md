@@ -24,12 +24,13 @@ It currently checks:
 | --- | --- |
 | **Repository** | README, `.gitignore`, large files, disposable tracked artifacts |
 | **Security** | Tracked environment files and high-confidence credential patterns |
-| **Documentation** | Broken local Markdown links |
+| **Documentation** | Broken and malformed local Markdown links |
 | **Dependencies** | Package-manager and lockfile consistency, invalid `package.json` |
+| **Maintenance** | Unresolved merge-conflict markers and TODO/FIXME maintenance markers |
 | **Hygiene** | Trailing whitespace and missing final newlines |
 | **Reporting** | Health score, severity counts, category counts, JSON output |
 
-Steward deliberately does **not** delete uncertain files, rewrite architecture, or require artificial intelligence for deterministic repository facts.
+Steward deliberately does **not** delete uncertain files, rewrite architecture, or require artificial intelligence (AI) for deterministic repository facts.
 
 ## Workflow
 
@@ -142,7 +143,7 @@ steward scan --ci
 }
 ```
 
-`exclude` supports repository-relative wildcard patterns. Disabled entries use registered rule IDs such as `security` or `dependencies`.
+`exclude` supports repository-relative wildcard patterns. Disabled entries use registered rule IDs such as `security`, `dependencies`, or `maintenance`.
 
 ## GitHub Action
 
@@ -180,7 +181,7 @@ During development, pin the Action to a reviewed branch or release tag instead o
 
 Steward follows one rule: **observe first, explain second, modify only when the requested fix is deterministic and explicitly enabled**.
 
-`fix` always refuses to modify files without `--safe`. `--dry-run` never writes. Security findings are observation-only.
+`fix` always refuses to modify files without `--safe`. `--dry-run` never writes. Security findings are observation-only. The current safe fixer only normalizes formatting-level hygiene findings.
 
 ## Architecture
 
