@@ -28,8 +28,9 @@ It currently checks:
 | **Dependencies** | Package-manager and lockfile consistency, invalid `package.json` |
 | **Maintenance** | Unresolved merge-conflict markers and TODO/FIXME maintenance markers |
 | **Hygiene** | Trailing whitespace and missing final newlines |
-| **Reporting** | Health score, severity counts, category counts, JSON output |
+| **Reporting** | Health score, severity counts, category counts, JSON output, stable finding fingerprints |
 | **Rule packs** | Versioned `core` and `security` packs with pack-level or rule-level disabling |
+| **Deltas** | Deterministic before/after health, finding, severity, and category changes |
 
 Steward deliberately does **not** delete uncertain files, rewrite architecture, or require artificial intelligence (AI) for deterministic repository facts.
 
@@ -51,11 +52,12 @@ RULE PACKS
 RULE EXECUTION
     |
     v
-FINDINGS
+FINDINGS + FINGERPRINTS
     |
     +--> human report
     +--> JSON report
     +--> CI decision
+    +--> before/after delta
     +--> explicit safe remediation
 ```
 
@@ -66,7 +68,7 @@ Steward is currently developed from source.
 ```bash
 git clone https://github.com/gODtECH-Ctl-Create/gODtECH-Steward.git
 cd gODtECH-Steward
-npm install
+npm ci
 npm run build
 npm install -g .
 ```
@@ -115,6 +117,14 @@ Write a JSON report:
 ```bash
 steward report --output .steward-report.json
 ```
+
+Compare the current repository with an earlier Steward report:
+
+```bash
+steward report --output current.json --compare previous.json
+```
+
+The comparison adds deterministic health, finding, severity, and category deltas. Finding fingerprints remain stable when an issue moves within the same file, and comparison output never copies source contents into delta evidence.
 
 Preview safe fixes without changing files:
 
@@ -240,7 +250,7 @@ Steward remains independently usable. It is a focused maintenance engine, not an
 - Neither integration is required for Steward's standalone operation.
 - Generic maintenance rules have one canonical implementation in Steward.
 
-The stable integration result is versioned as `schemaVersion: 1`. See [`docs/integration.md`](docs/integration.md) and [`schemas/steward-result.schema.json`](schemas/steward-result.schema.json).
+The stable integration result is versioned as `schemaVersion: 1`. See [`docs/integration.md`](docs/integration.md), [`docs/deltas.md`](docs/deltas.md), and [`schemas/steward-result.schema.json`](schemas/steward-result.schema.json).
 
 ## Architecture
 
@@ -262,7 +272,7 @@ The stable integration result is versioned as `schemaVersion: 1`. See [`docs/int
           +-----------------+-----------------+
                             |
                             v
-                       stable findings
+                    stable findings + fingerprints
                             |
               +-------------+-------------+
               |             |             |
@@ -272,15 +282,19 @@ The stable integration result is versioned as `schemaVersion: 1`. See [`docs/int
                             |
                             v
                       safe remediation
+                            |
+                            v
+                     optional delta
 ```
 
-See [`docs/architecture.md`](docs/architecture.md), [`docs/rules.md`](docs/rules.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
+See [`docs/architecture.md`](docs/architecture.md), [`docs/rules.md`](docs/rules.md), [`docs/deltas.md`](docs/deltas.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Development
 
 The repository follows the gODtECH FORGE delivery model: material work is tracked, implemented on a dedicated branch, verified, and documented before merge.
 
 ```bash
+npm ci
 npm run check
 npm run build
 npm test
@@ -288,6 +302,6 @@ npm test
 
 ## Status
 
-**Active development / rule-pack architecture**
+**Active development / evidence-aware maintenance**
 
-The deterministic engine, CLI, reporting contract, configuration validation, versioned rule packs, first rule set, conservative remediation model, and GitHub Action integration are established. Future work can add trusted external rule-pack distribution, richer evidence and health deltas, language-aware analysis, dependency graphs, and broader product-health capabilities without replacing the core pipeline.
+The deterministic engine, CLI, reporting contract, reproducible installation path, configuration validation, versioned rule packs, stable finding fingerprints, before/after deltas, conservative remediation model, and GitHub Action integration are established. Future work can add broader deterministic analysis, trusted external rule-pack distribution, Forge and StackPilot adapters, language-aware analysis, dependency graphs, richer health evidence, and release-grade artifact provenance without replacing the core pipeline.
