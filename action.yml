@@ -6,12 +6,15 @@ inputs:
     required: false
     default: .
   args:
-    description: Steward command and additional arguments
+    description: JSON array of Steward arguments, for example ["scan", "--ci"]
     required: false
-    default: scan --ci
+    default: '["scan", "--ci"]'
 runs:
   using: composite
   steps:
     - name: Run Steward
       shell: bash
-      run: node "${{ github.action_path }}/dist/src/cli.js" ${{ inputs.args }} "${{ inputs.path }}"
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_ARGS: ${{ inputs.args }}
+      run: node "${{ github.action_path }}/action-runner.cjs"
