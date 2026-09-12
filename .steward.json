@@ -1,17 +1,12 @@
 {
   "version": 1,
-  "exclude": [
-    ".git",
-    "node_modules",
-    "dist",
-    "build",
-    ".next",
-    "coverage",
-    ".steward"
-  ],
-  "maxFileSizeBytes": 2097152,
+  "exclude": [],
+  "maxFileSizeBytes": 10485760,
   "largeFileThresholdBytes": 5242880,
   "ci": {
     "failOn": "critical"
+  },
+  "rules": {
+    "disabled": []
   }
 }
