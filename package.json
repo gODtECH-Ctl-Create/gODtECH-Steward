@@ -23,6 +23,7 @@
     "check": "tsc --noEmit",
     "test": "npm run build && node dist/test/runner.js",
     "verify": "npm run check && npm test",
+    "verify:package": "npm run check && node scripts/verify-package.mjs",
     "prepack": "npm run build"
   },
   "keywords": [
