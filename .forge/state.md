@@ -1,31 +1,42 @@
 # gODtECH Steward state
 
 ## Current stage
-READY FOR MAIN REVIEW
+RULE-PACK ARCHITECTURE
 
 ## Current baseline
 
-Steward has a deterministic scan engine, first-class rule registry, terminal command-line interface (CLI), human and JSON reporting, repository-owned configuration, conservative safe remediation, and a composite GitHub Action using the same compiled engine.
+Steward has a deterministic scan engine, first-class rule contracts, versioned machine-readable reporting, repository-owned configuration, conservative safe remediation, and a composite GitHub Action using the same compiled engine.
 
-## Active rule set
+## Active rule packs
 
-- Repository structure, Gitignore baseline, large files, disposable tracked artifacts.
-- High-confidence tracked environment files and credential patterns.
-- Broken and malformed local Markdown links with URI/query/fragment handling.
-- Package-manager and lockfile consistency.
-- Unresolved merge-conflict markers and TODO/FIXME maintenance markers.
-- Formatting-only hygiene fixes.
+- `core@1`: repository, documentation, dependency, maintenance, and hygiene checks.
+- `security@1`: high-confidence credential and security-pattern checks.
+
+Pack-level disabling is evaluated before individual rule-level disabling. External executable rule packs are intentionally not loaded from arbitrary configuration paths.
+
+## Current CLI
+
+- `init`
+- `scan`
+- `doctor`
+- `report`
+- `rules`
+- `fix --safe`
+
+## Integration contract
+
+The public machine-readable result is versioned as `schemaVersion: 1` and is the boundary for future gODtECH FORGE and StackPilot integration. Neither integration is a runtime dependency for Steward.
 
 ## Verification state
 
-The hardening implementation was merged into this foundation branch at commit `df3aa76f4c417225fe839c6bb5c86215d2f2ad47`. GitHub Continuous Integration (CI) and Steward scan both passed against that exact merge commit, covering type checking, production build, automated tests, and the compiled CLI continuous integration scan.
+The integration-contract milestone was merged into the foundation branch at commit `9b3db201d6996b1c94e350b3a9b05cea4870c21e`. The exact head passed both required GitHub workflows before this rule-pack branch was created.
 
-The final foundation review also confirmed that the source and committed distribution are aligned for the implemented rule set, the three prior inline review findings are resolved, and the branch is mergeable into `main` through the existing foundation pull request.
+This rule-pack change adds deterministic pack selection, pack visibility in reports, CLI diagnostics, and regression coverage. It must pass the same Continuous Integration (CI) and Steward scan workflows before merge.
 
 ## Known limitations
 
 - Language-aware static analysis is not yet part of the core.
 - Security detection is intentionally high-confidence and does not replace dedicated secret-scanning services.
-- Product-health checks beyond repository hygiene are future extensions.
+- External executable rule packs are deferred until trust, compatibility, and provenance rules exist.
 - npm publication and release tagging have not yet been performed.
 - A committed npm lockfile and `npm ci`-based reproducible install path should be added before treating the package as a release-grade distribution artifact.
