@@ -10,6 +10,7 @@ export const DEFAULT_CONFIG: ScanConfig = {
   maxFileSizeBytes: 10 * 1024 * 1024,
   largeFileThresholdBytes: 5 * 1024 * 1024,
   ci: { failOn: "critical" },
+  packs: { disabled: [] },
   rules: { disabled: [] }
 };
 
@@ -41,8 +42,8 @@ function parseConfig(raw: unknown): ScanConfig {
   const failOn = ci.failOn ?? DEFAULT_CONFIG.ci.failOn;
   if (!validSeverity(failOn)) throw new Error(`ci.failOn must be one of: ${SEVERITIES.join(", ")}.`);
 
+  const packs = value.packs && typeof value.packs === "object" ? value.packs as Record<string, unknown> : {};
   const rules = value.rules && typeof value.rules === "object" ? value.rules as Record<string, unknown> : {};
-  const disabled = normaliseExcludes(rules.disabled);
 
   return {
     version: 1,
@@ -50,7 +51,8 @@ function parseConfig(raw: unknown): ScanConfig {
     maxFileSizeBytes,
     largeFileThresholdBytes,
     ci: { failOn },
-    rules: { disabled }
+    packs: { disabled: normaliseExcludes(packs.disabled) },
+    rules: { disabled: normaliseExcludes(rules.disabled) }
   };
 }
 
