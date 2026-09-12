@@ -3,7 +3,7 @@ import test from "node:test";
 import { calculateScanDelta, findingFingerprint } from "../src/core/delta.js";
 import { toJson } from "../src/core/report.js";
 function finding(overrides = {}) {
-  return {
+  const item = {
     id: "maintenance.todo-markers.src/app.ts",
     rule: "todo-fixme",
     category: "code",
@@ -15,6 +15,7 @@ function finding(overrides = {}) {
     confidence: "high",
     ...overrides,
   };
+  return { ...item, fingerprint: findingFingerprint(item) };
 }
 function result(healthScore, findings) {
   return {
