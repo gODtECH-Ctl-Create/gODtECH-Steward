@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/blob/main/schemas/steward-forge-evidence.schema.json",
+  "title": "gODtECH Steward FORGE evidence",
+  "description": "Observed repository-health evidence produced by gODtECH Steward for consumption by the gODtECH FORGE workflow. This is not the FORGE benchmark result schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "evidenceType",
+    "producer",
+    "observedAt",
+    "repository",
+    "observation",
+    "continuousIntegration",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "evidenceType": { "const": "repository-health" },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "resultSchemaVersion", "version"],
+      "properties": {
+        "name": { "const": "gODtECH Steward" },
+        "resultSchemaVersion": { "const": 1 },
+        "version": { "const": "0.1.0" }
+      }
+    },
+    "observedAt": { "type": "string", "format": "date-time" },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root"],
+      "properties": {
+        "root": { "type": "string", "minLength": 1 },
+        "branch": { "type": "string", "minLength": 1 },
+        "commit": { "type": "string", "minLength": 1 },
+        "dirty": { "type": "boolean" }
+      }
+    },
+    "observation": { "$ref": "#/$defs/observation" },
+    "continuousIntegration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "failOn", "outcome"],
+      "properties": {
+        "command": { "const": "steward scan --ci" },
+        "failOn": { "enum": ["critical", "high", "medium", "low", "info"] },
+        "outcome": { "enum": ["passed", "failed"] }
+      }
+    },
+    "delta": { "$ref": "#/$defs/delta" },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "rule", "category", "severity"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "rule": { "type": "string", "minLength": 1 },
+        "category": { "enum": ["repository", "security", "documentation", "code", "dependencies", "git", "configuration"] },
+        "severity": { "enum": ["critical", "high", "medium", "low", "info"] },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "severityCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["critical", "high", "medium", "low", "info"],
+      "properties": {
+        "critical": { "type": "integer", "minimum": 0 },
+        "high": { "type": "integer", "minimum": 0 },
+        "medium": { "type": "integer", "minimum": 0 },
+        "low": { "type": "integer", "minimum": 0 },
+        "info": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scannedFiles", "textFiles", "healthScore", "findingCount", "severityCounts", "categoryCounts", "findings"],
+      "properties": {
+        "scannedFiles": { "type": "integer", "minimum": 0 },
+        "textFiles": { "type": "integer", "minimum": 0 },
+        "healthScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "findingCount": { "type": "integer", "minimum": 0 },
+        "severityCounts": { "$ref": "#/$defs/severityCounts" },
+        "categoryCounts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "rulePacks": { "type": "array", "items": { "$ref": "#/$defs/rulePack" }, "uniqueItems": true },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+      }
+    },
+    "rulePack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "countDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["previous", "current", "delta"],
+      "properties": {
+        "previous": { "type": "integer", "minimum": 0 },
+        "current": { "type": "integer", "minimum": 0 },
+        "delta": { "type": "integer" }
+      }
+    },
+    "findingFingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fingerprint", "id", "rule"],
+      "properties": {
+        "fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "id": { "type": "string", "minLength": 1 },
+        "rule": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "delta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["health", "findings", "severityCounts", "categoryCounts"],
+      "properties": {
+        "health": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["previous", "current", "delta", "direction"],
+          "properties": {
+            "previous": { "type": "integer", "minimum": 0 },
+            "current": { "type": "integer", "minimum": 0 },
+            "delta": { "type": "integer" },
+            "direction": { "enum": ["improved", "regressed", "unchanged"] }
+          }
+        },
+        "findings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["previous", "current", "added", "resolved", "unchanged", "addedItems", "resolvedItems"],
+          "properties": {
+            "previous": { "type": "integer", "minimum": 0 },
+            "current": { "type": "integer", "minimum": 0 },
+            "added": { "type": "integer", "minimum": 0 },
+            "resolved": { "type": "integer", "minimum": 0 },
+            "unchanged": { "type": "integer", "minimum": 0 },
+            "addedItems": { "type": "array", "items": { "$ref": "#/$defs/findingFingerprint" } },
+            "resolvedItems": { "type": "array", "items": { "$ref": "#/$defs/findingFingerprint" } }
+          }
+        },
+        "severityCounts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["critical", "high", "medium", "low", "info"],
+          "properties": {
+            "critical": { "$ref": "#/$defs/countDelta" },
+            "high": { "$ref": "#/$defs/countDelta" },
+            "medium": { "$ref": "#/$defs/countDelta" },
+            "low": { "$ref": "#/$defs/countDelta" },
+            "info": { "$ref": "#/$defs/countDelta" }
+          }
+        },
+        "categoryCounts": { "type": "object", "additionalProperties": { "$ref": "#/$defs/countDelta" } }
+      }
+    }
+  }
+}
