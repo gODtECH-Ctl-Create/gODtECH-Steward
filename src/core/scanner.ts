@@ -1,5 +1,5 @@
 import { performance } from "node:perf_hooks";
-import { relative, resolve } from "node:path";
+import { relative, resolve, sep } from "node:path";
 import { collectFiles, normalisePath } from "./files.js";
 import { loadConfig } from "./config.js";
 import { gitFacts } from "./git.js";
@@ -29,9 +29,8 @@ function scopedTrackedFiles(root: string, gitRoot: string | undefined, tracked: 
   for (const path of tracked) {
     const absolute = resolve(gitRoot, path);
     const relativePath = relative(root, absolute);
-    if (relativePath === "" || (relativePath !== ".." && !relativePath.startsWith(`..${require("node:path").sep}`))) {
-      scoped.add(normalisePath(relativePath));
-    }
+    const inside = relativePath === "" || (relativePath !== ".." && !relativePath.startsWith(`..${sep}`));
+    if (inside) scoped.add(normalisePath(relativePath));
   }
   return scoped;
 }
@@ -58,7 +57,13 @@ export async function scanRepository(inputRoot: string): Promise<ScanResult> {
   const git = gitFacts(root);
   const files = await collectFiles(root, config);
   const scopedTracked = scopedTrackedFiles(root, git.root, git.trackedFiles);
-  const context: ScanContext = { root, config, files, trackedFiles: scopedTracked, git: { ...git, trackedFiles: scopedTracked } };
+  const context: ScanContext = {
+    root,
+    config,
+    files,
+    trackedFiles: scopedTracked,
+    git: { ...git, trackedFiles: scopedTracked }
+  };
   const findings: Finding[] = [];
 
   if (loaded.warning) findings.push(configFinding(loaded.warning));
