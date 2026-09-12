@@ -22,10 +22,11 @@ It currently checks:
 
 | Area | Checks |
 | --- | --- |
-| **Repository** | README, `.gitignore`, large files, disposable tracked artifacts |
+| **Repository** | README, `.gitignore`, large files, disposable tracked artifacts, generated test/tool outputs |
 | **Security** | Tracked environment files and high-confidence credential patterns |
 | **Documentation** | Broken and malformed local Markdown links |
 | **Dependencies** | Package-manager and lockfile consistency, invalid `package.json` |
+| **Project metadata** | Package identity and publishable-package metadata completeness |
 | **Maintenance** | Unresolved merge-conflict markers and TODO/FIXME maintenance markers |
 | **Hygiene** | Trailing whitespace and missing final newlines |
 | **Reporting** | Health score, severity counts, category counts, JSON output, stable finding fingerprints |
@@ -197,7 +198,7 @@ name: Steward
 
 on:
   pull_request:
-  push:
+  push
 
 permissions:
   contents: read
@@ -304,4 +305,4 @@ npm test
 
 **Active development / evidence-aware maintenance**
 
-The deterministic engine, CLI, reporting contract, reproducible installation path, configuration validation, versioned rule packs, stable finding fingerprints, before/after deltas, conservative remediation model, and GitHub Action integration are established. Future work can add broader deterministic analysis, trusted external rule-pack distribution, Forge and StackPilot adapters, language-aware analysis, dependency graphs, richer health evidence, and release-grade artifact provenance without replacing the core pipeline.
+The deterministic engine, CLI, reporting contract, reproducible installation path, configuration validation, versioned rule packs, stable finding fingerprints, before/after deltas, broader metadata and generated-artifact health checks, conservative remediation model, and GitHub Action integration are established. Future work can add trusted external rule-pack distribution, Forge and StackPilot adapters, language-aware analysis, dependency graphs, richer health evidence, and release-grade artifact provenance without replacing the core pipeline.
