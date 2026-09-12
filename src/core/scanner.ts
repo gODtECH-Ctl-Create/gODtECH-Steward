@@ -40,7 +40,7 @@ function configFinding(message: string): Finding {
     id: "configuration.invalid-steward-config",
     rule: "invalid-steward-config",
     category: "configuration",
-    severity: "high",
+    severity: "critical",
     message: `Invalid .steward.json: ${message}`,
     path: ".steward.json",
     fixable: false,
@@ -57,13 +57,7 @@ export async function scanRepository(inputRoot: string): Promise<ScanResult> {
   const git = gitFacts(root);
   const files = await collectFiles(root, config);
   const scopedTracked = scopedTrackedFiles(root, git.root, git.trackedFiles);
-  const context: ScanContext = {
-    root,
-    config,
-    files,
-    trackedFiles: scopedTracked,
-    git: { ...git, trackedFiles: scopedTracked }
-  };
+  const context: ScanContext = { root, config, files, trackedFiles: scopedTracked, git: { ...git, trackedFiles: scopedTracked } };
   const findings: Finding[] = [];
 
   if (loaded.warning) findings.push(configFinding(loaded.warning));
@@ -76,7 +70,7 @@ export async function scanRepository(inputRoot: string): Promise<ScanResult> {
         id: `internal.rule-failure.${rule.id}`,
         rule: "rule-execution-failure",
         category: "configuration",
-        severity: "high",
+        severity: "critical",
         message: `Rule ${rule.id} failed during scanning.`,
         fixable: false,
         confidence: "high",
