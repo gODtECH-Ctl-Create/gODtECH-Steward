@@ -32,6 +32,13 @@ export interface FileEntry {
   content?: string;
 }
 
+export interface ExternalPackTrustPolicy {
+  enabled: boolean;
+  requireSigned: boolean;
+  allow: string[];
+  trustedPublishers: Record<string, Record<string, string>>;
+}
+
 export interface ScanConfig {
   version: 1;
   exclude: string[];
@@ -46,6 +53,7 @@ export interface ScanConfig {
   rules: {
     disabled: string[];
   };
+  externalPacks: ExternalPackTrustPolicy;
 }
 
 export interface GitFacts {
