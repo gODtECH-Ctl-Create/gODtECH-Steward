@@ -32,6 +32,7 @@ It currently checks:
 | **Reporting** | Health score, severity counts, category counts, JSON output, stable finding fingerprints |
 | **Rule packs** | Versioned `core` and `security` packs with pack-level or rule-level disabling |
 | **Deltas** | Deterministic before/after health, finding, severity, and category changes |
+| **FORGE evidence** | Safe observed repository-health evidence for gODtECH FORGE workflows |
 
 Steward deliberately does **not** delete uncertain files, rewrite architecture, or require artificial intelligence (AI) for deterministic repository facts.
 
@@ -59,6 +60,7 @@ FINDINGS + FINGERPRINTS
     +--> JSON report
     +--> CI decision
     +--> before/after delta
+    +--> FORGE evidence
     +--> explicit safe remediation
 ```
 
@@ -126,6 +128,20 @@ steward report --output current.json --compare previous.json
 ```
 
 The comparison adds deterministic health, finding, severity, and category deltas. Finding fingerprints remain stable when an issue moves within the same file, and comparison output never copies source contents into delta evidence.
+
+Export observed repository-health evidence for gODtECH FORGE (Framework for Orchestrated Reasoning, Governance & Engineering):
+
+```bash
+steward forge-evidence
+```
+
+Write the evidence artifact for a workflow step or retained benchmark evidence:
+
+```bash
+steward forge-evidence . --output .steward-forge-evidence.json
+```
+
+The evidence artifact is intentionally **not** a FORGE benchmark result. It contains observed Steward scan data only and does not invent benchmark IDs, control/assisted runs, provider metrics, or productivity claims.
 
 Preview safe fixes without changing files:
 
@@ -229,9 +245,9 @@ Before a release, Steward can verify the actual npm package consumers receive:
 npm run verify:package
 ```
 
-The verification builds the package, inspects its archive contents, installs the generated tarball into a clean consumer directory, executes both `steward` and `godtech-steward`, validates the versioned JSON scan contract, runs the packaged GitHub Action, and confirms malformed Action argument payloads are rejected.
+The verification builds the package, inspects its archive contents, installs the generated tarball into a clean consumer directory, executes both `steward` and `godtech-steward`, validates the versioned JSON scan contract, exercises the `forge-evidence` command, runs the packaged GitHub Action, and confirms malformed Action argument payloads are rejected.
 
-The distribution workflow runs this verification remotely on every push and pull request. This keeps the CLI, package archive, and Action runner tied to the same compiled `dist/` artifact.
+The distribution workflow runs this verification remotely on every push and pull request. This keeps the CLI, package archive, Action runner, and Forge evidence adapter tied to the same compiled `dist/` artifact.
 
 ## Safety model
 
@@ -258,12 +274,12 @@ Steward remains independently usable. It is a focused maintenance engine, not an
                    TARGET PROJECT
 ```
 
-- **gODtECH FORGE** may invoke Steward through the public command or machine-readable result contract when maintenance evidence is relevant.
+- **gODtECH FORGE** may invoke Steward through the public command, JSON result contract, or `forge-evidence` adapter when repository-health evidence is relevant.
 - **StackPilot** may optionally consume generic Steward findings while keeping its own golden-path checks separate.
 - Neither integration is required for Steward's standalone operation.
 - Generic maintenance rules have one canonical implementation in Steward.
 
-The stable integration result is versioned as `schemaVersion: 1`. See [`docs/integration.md`](docs/integration.md), [`docs/deltas.md`](docs/deltas.md), and [`schemas/steward-result.schema.json`](schemas/steward-result.schema.json).
+The stable scan result is versioned as `schemaVersion: 1`. The dedicated FORGE evidence artifact is separately versioned as `schemaVersion: 1` and explicitly identifies itself as observed `repository-health` evidence rather than a benchmark result. See [`docs/integration.md`](docs/integration.md), [`docs/deltas.md`](docs/deltas.md), and [`schemas/steward-result.schema.json`](schemas/steward-result.schema.json).
 
 ## Architecture
 
@@ -293,6 +309,8 @@ The stable integration result is versioned as `schemaVersion: 1`. See [`docs/int
             text          JSON            CI
            report         report         gate
                             |
+                            +---------> FORGE evidence
+                            |
                             v
                       safe remediation
                             |
@@ -300,7 +318,7 @@ The stable integration result is versioned as `schemaVersion: 1`. See [`docs/int
                      optional delta
 ```
 
-See [`docs/architecture.md`](docs/architecture.md), [`docs/rules.md`](docs/rules.md), [`docs/deltas.md`](docs/deltas.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
+See [`docs/architecture.md`](docs/architecture.md), [`docs/rules.md`](docs/rules.md), [`docs/deltas.md`](docs/deltas.md), [`docs/integration.md`](docs/integration.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Development
 
@@ -318,4 +336,4 @@ npm run verify:package
 
 **Active development / evidence-aware maintenance**
 
-The deterministic engine, CLI, reporting contract, reproducible installation path, configuration validation, versioned rule packs, stable finding fingerprints, before/after deltas, broader repository-health checks, consumer-style package verification, conservative remediation model, and GitHub Action integration are established. Future work can add trusted external rule-pack distribution, Forge and StackPilot adapters, language-aware analysis, dependency graphs, richer health evidence, and release-grade artifact provenance without replacing the core pipeline.
+The deterministic engine, CLI, reporting contract, reproducible installation path, configuration validation, versioned rule packs, stable finding fingerprints, before/after deltas, broader repository-health checks, consumer-style package verification, Forge evidence adapter, conservative remediation model, and GitHub Action integration are established. Future work can add trusted external rule-pack distribution, StackPilot adapters, language-aware analysis, dependency graphs, richer health evidence, and release-grade artifact provenance without replacing the core pipeline.
