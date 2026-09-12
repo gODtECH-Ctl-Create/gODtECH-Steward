@@ -71,7 +71,7 @@ The command-line interface (CLI) is available as:
 
 ```bash
 steward --help
-gotek-steward --help
+godtech-steward --help
 ```
 
 ## CLI usage
