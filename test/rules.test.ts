@@ -30,6 +30,24 @@ test("documentation rule detects broken local Markdown links", async () => {
   assert.equal(finding?.category, "documentation");
 });
 
+test("documentation rule accepts query and fragment components and skips external URI schemes", async () => {
+  const root = await fixture();
+  await writeFile(join(root, "README.md"), "# Example\n\n[Guide](docs/guide.md?raw=1#install) [SSH](ssh://git.example.com/repo) [FTP](ftp://example.com/file)\n", "utf8");
+  await writeFile(join(root, ".gitignore"), ".env\n.env.*\nnode_modules/\n", "utf8");
+  await writeFile(join(root, "docs-guide.md"), "guide\n", "utf8");
+  await writeFile(join(root, "docs", "guide.md"), "# Guide\n", "utf8");
+  const result = await scanRepository(root);
+  assert.equal(result.findings.some((finding) => finding.rule === "broken-markdown-link"), false);
+});
+
+test("repository rule accepts lowercase README filenames", async () => {
+  const root = await fixture();
+  await writeFile(join(root, "readme.md"), "# Example\n", "utf8");
+  await writeFile(join(root, ".gitignore"), ".env\n.env.*\n", "utf8");
+  const result = await scanRepository(root);
+  assert.equal(result.findings.some((finding) => finding.rule === "missing-readme"), false);
+});
+
 test("maintenance rule detects unresolved merge markers and groups TODO/FIXME markers per file", async () => {
   const root = await fixture();
   await writeFile(join(root, "README.md"), "# Example\n", "utf8");
