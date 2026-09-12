@@ -52,7 +52,7 @@ test("Forge evidence contains only safe observed finding fields", () => {
     path: ".env.example",
     details: "SECRET_VALUE_SHOULD_NOT_LEAK",
   });
-  const evidence = toForgeEvidence(result([secret]), "critical", undefined, "2026-09-12T12:00:00.000Z");
+  const evidence = toForgeEvidence(result([secret]), "high", undefined, "2026-09-12T12:00:00.000Z");
   assert.equal(evidence.schemaVersion, 1);
   assert.equal(evidence.evidenceType, "repository-health");
   assert.equal(evidence.producer.name, "gODtECH Steward");
