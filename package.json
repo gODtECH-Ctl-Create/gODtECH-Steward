@@ -5,7 +5,7 @@
   "type": "module",
   "bin": {
     "steward": "dist/src/cli.js",
-    "gotek-steward": "dist/src/cli.js"
+    "godtech-steward": "dist/src/cli.js"
   },
   "files": [
     "dist/src",
