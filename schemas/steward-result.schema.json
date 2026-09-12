@@ -45,7 +45,8 @@
       "type": "array",
       "items": { "$ref": "#/$defs/rulePack" },
       "uniqueItems": true
-    }
+    },
+    "delta": { "$ref": "#/$defs/scanDelta" }
   },
   "$defs": {
     "finding": {
@@ -73,7 +74,8 @@
         "fixable": { "type": "boolean" },
         "confidence": { "enum": ["high", "medium", "low"] },
         "details": { "type": "string" },
-        "remediation": { "type": "string" }
+        "remediation": { "type": "string" },
+        "fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
       }
     },
     "rulePack": {
@@ -83,6 +85,77 @@
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "version": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "findingFingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fingerprint", "id", "rule"],
+      "properties": {
+        "fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "id": { "type": "string", "minLength": 1 },
+        "rule": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "countDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["previous", "current", "delta"],
+      "properties": {
+        "previous": { "type": "integer", "minimum": 0 },
+        "current": { "type": "integer", "minimum": 0 },
+        "delta": { "type": "integer" }
+      }
+    },
+    "scanDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["health", "findings", "severityCounts", "categoryCounts"],
+      "properties": {
+        "health": {
+          "allOf": [
+            { "$ref": "#/$defs/countDelta" },
+            {
+              "type": "object",
+              "required": ["direction"],
+              "properties": {
+                "direction": { "enum": ["improved", "regressed", "unchanged"] }
+              }
+            }
+          ]
+        },
+        "findings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["previous", "current", "added", "resolved", "unchanged", "addedItems", "resolvedItems"],
+          "properties": {
+            "previous": { "type": "integer", "minimum": 0 },
+            "current": { "type": "integer", "minimum": 0 },
+            "added": { "type": "integer", "minimum": 0 },
+            "resolved": { "type": "integer", "minimum": 0 },
+            "unchanged": { "type": "integer", "minimum": 0 },
+            "addedItems": { "type": "array", "items": { "$ref": "#/$defs/findingFingerprint" } },
+            "resolvedItems": { "type": "array", "items": { "$ref": "#/$defs/findingFingerprint" } }
+          }
+        },
+        "severityCounts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["critical", "high", "medium", "low", "info"],
+          "properties": {
+            "critical": { "$ref": "#/$defs/countDelta" },
+            "high": { "$ref": "#/$defs/countDelta" },
+            "medium": { "$ref": "#/$defs/countDelta" },
+            "low": { "$ref": "#/$defs/countDelta" },
+            "info": { "$ref": "#/$defs/countDelta" }
+          }
+        },
+        "categoryCounts": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/countDelta" }
+        }
       }
     },
     "git": {
