@@ -1,5 +1,5 @@
 const GENERATED_PATTERNS = [/^coverage\//, /^\.next\//, /(^|\/)npm-debug\.log(?:\.\d+)?$/, /(^|\/)yarn-debug\.log$/, /(^|\/)yarn-error\.log$/, /(^|\/)\.DS_Store$/, /(^|\/)Thumbs\.db$/];
-function hasFile(context, path) { return context.files.some((file) => file.relPath === path) || context.trackedFiles.has(path); }
+function hasFile(context, path) { const expected = path.toLowerCase(); return context.files.some((file) => file.relPath.toLowerCase() === expected) || [...context.trackedFiles].some((tracked) => tracked.toLowerCase() === expected); }
 function trackedGeneratedFiles(context) { return [...context.trackedFiles].filter((path) => GENERATED_PATTERNS.some((pattern) => pattern.test(path))).sort(); }
 function requiredGitignorePatterns(context) { const patterns = [".env", ".env.*"]; if (hasFile(context, "package.json")) patterns.push("node_modules/"); return patterns; }
 function gitignoreNeeds(content, patterns) { if (!content) return patterns; const lines = new Set(content.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)); return patterns.filter((pattern) => !lines.has(pattern)); }
