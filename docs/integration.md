@@ -19,11 +19,12 @@ The JSON document contains:
 - `version`: Steward scan-result model version.
 - `root`: inspected repository root.
 - `scannedFiles` and `textFiles`: bounded scan scope.
-- `findings`: deterministic maintenance findings with rule, category, severity, confidence, location, and remediation metadata.
+- `findings`: deterministic maintenance findings with rule, category, severity, confidence, location, remediation metadata, and an optional stable fingerprint.
 - `healthScore`: deterministic health score from 0 to 100.
 - `git`: sanitized Git facts; internal tracked-file sets are not serialized.
 - `categoryCounts` and `ruleCounts`: aggregate finding counts.
 - `rulePacks`: active built-in pack identifiers and versions when available.
+- `delta`: optional before/after health and finding comparison data when a report is generated with `--compare`.
 
 ## Consumers
 
@@ -40,10 +41,12 @@ StackPilot may consume generic Steward findings while retaining ownership of gol
 1. Consumers should branch on `schemaVersion` before parsing fields.
 2. Consumers must not assume internal TypeScript types, file layout, or implementation details.
 3. New optional fields may be added only in a backward-compatible schema revision; breaking changes require a new schema version.
-4. Finding rule IDs are stable identifiers within the contract and should be treated as data, not display text.
+4. Finding rule IDs and fingerprints are stable data identifiers and should not be treated as display text.
 5. Rule-pack identifiers and versions describe which built-in analysis families were active for the scan.
-6. `fixable: true` describes that Steward has a deterministic remediation path; consumers still decide whether and when it is appropriate to invoke remediation.
-7. Steward never requires Forge or StackPilot for standalone operation.
+6. `delta` is optional. Consumers must tolerate its absence.
+7. Delta item payloads contain only finding identity and location references; they do not contain source-file contents or detected secret values.
+8. `fixable: true` describes that Steward has a deterministic remediation path; consumers still decide whether and when it is appropriate to invoke remediation.
+9. Steward never requires Forge or StackPilot for standalone operation.
 
 ## Remediation boundary
 
