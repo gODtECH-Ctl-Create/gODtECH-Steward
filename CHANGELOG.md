@@ -8,12 +8,15 @@
 - Deterministic detection of additional generated test and tooling artifacts.
 - `core` rule pack version 2 to make the expanded rule inventory explicit.
 - Consumer-style package verification for the npm archive and packaged GitHub Action.
+- `forge-evidence` command for observed repository-health evidence suitable for gODtECH FORGE workflow consumption.
+- Dedicated `steward-forge-evidence.schema.json` contract for the adapter artifact.
 
 ### Changed
 
 - Core repository-health coverage now includes package identity, description, and publishable-package completeness signals.
 - Generated-output detection remains conservative and does not classify generic `dist/` or `build/` directories as disposable by default.
-- Distribution verification now installs the generated package tarball offline and exercises the shipped CLI and Action artifacts.
+- Distribution verification now installs the generated package tarball offline and exercises the shipped CLI, Action, and Forge evidence artifacts.
+- FORGE integration is explicitly separated from FORGE benchmark result generation; Steward does not fabricate benchmark or provider-telemetry fields.
 
 ## 0.1.0
 
