@@ -21,6 +21,7 @@ export interface Finding {
   confidence: "high" | "medium" | "low";
   details?: string;
   remediation?: string;
+  fingerprint?: string;
 }
 
 export interface FileEntry {
