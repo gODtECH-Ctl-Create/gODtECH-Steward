@@ -8,8 +8,11 @@
     "gotek-steward": "dist/src/cli.js"
   },
   "files": [
-    "dist",
-    "action.yml"
+    "dist/src",
+    "action.yml",
+    "action-runner.cjs",
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"
@@ -17,7 +20,8 @@
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit",
-    "test": "npm run build && node --test dist/test/runner.js",
+    "test": "npm run build && node dist/test/runner.js",
+    "verify": "npm run check && npm test",
     "prepack": "npm run build"
   },
   "keywords": [
@@ -26,9 +30,17 @@
     "developer-tools",
     "github-action",
     "code-health",
-    "gODtECH"
+    "gODtECH",
+    "steward"
   ],
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gODtECH-Ctl-Create/gODtECH-Steward.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/issues"
+  },
   "devDependencies": {
     "@types/node": "^24.3.0",
     "typescript": "^5.9.2"
