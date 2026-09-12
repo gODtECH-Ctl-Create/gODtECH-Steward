@@ -1,28 +1,50 @@
 import { existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import type { FileEntry, Finding } from "../core/types.js";
+import { resolve } from "node:path";
+import type { Finding, ScanContext, StewardRule } from "../core/types.js";
 
-function localTarget(raw: string): string | null {
-  const value = raw.trim().replace(/^<|>$/g, "");
-  if (!value || value.startsWith("#") || value.startsWith("/") || /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("//")) return null;
-  return value.split(/[?#]/, 1)[0] ?? null;
+const MARKDOWN_LINK = /!?(?:\[[^\]]*\])\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g;
+
+function isSkippable(target: string): boolean {
+  return /^(?:https?:\/\/|mailto:|tel:|data:|#)/i.test(target);
 }
 
-export function documentationFindings(root: string, files: FileEntry[]): Finding[] {
-  const findings: Finding[] = [];
-  for (const file of files) {
-    if (!file.isText || file.content === undefined || !/\.mdx?$/i.test(file.relPath)) continue;
-    const regex = /\[[^\]]*\]\(([^)]+)\)/g;
-    for (const match of file.content.matchAll(regex)) {
-      const target = localTarget(match[1] ?? "");
-      if (!target) continue;
-      const candidate = resolve(root, dirname(file.relPath), target);
-      const relative = candidate.startsWith(`${resolve(root)}\\`) || candidate.startsWith(`${resolve(root)}/`);
-      if (!relative || !existsSync(candidate)) {
-        const line = file.content.slice(0, match.index ?? 0).split(/\r?\n/).length;
-        findings.push({ id: "documentation.broken-local-link", rule: "broken-local-link", category: "documentation", severity: "medium", message: "Markdown link points to a missing local target.", path: file.relPath, line, fixable: false, details: target });
+function stripFragment(target: string): string {
+  return target.split("#", 1)[0] ?? target;
+}
+
+export const documentationRule: StewardRule = {
+  id: "documentation",
+  category: "documentation",
+  description: "Checks local Markdown links for broken repository-relative targets.",
+  run(context: ScanContext): Finding[] {
+    const findings: Finding[] = [];
+    for (const file of context.files) {
+      if (!file.isText || file.content === undefined || !/\.(?:md|mdx)$/i.test(file.relPath)) continue;
+      MARKDOWN_LINK.lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = MARKDOWN_LINK.exec(file.content)) !== null) {
+        const rawTarget = match[1];
+        if (!rawTarget || isSkippable(rawTarget)) continue;
+        const target = decodeURIComponent(stripFragment(rawTarget));
+        if (!target || target.startsWith("/")) continue;
+        const resolved = resolve(context.root, file.relPath, "..");
+        const absolute = resolve(resolved, target);
+        if (existsSync(absolute)) continue;
+        const line = file.content.slice(0, match.index).split(/\r?\n/).length;
+        findings.push({
+          id: `documentation.broken-link.${file.relPath}:${line}:${target}`,
+          rule: "broken-markdown-link",
+          category: "documentation",
+          severity: "low",
+          message: `Local Markdown link does not resolve: ${target}`,
+          path: file.relPath,
+          line,
+          fixable: false,
+          confidence: "high",
+          remediation: "Update the link to an existing repository path or remove the stale reference."
+        });
       }
     }
+    return findings;
   }
-  return findings;
-}
+};
