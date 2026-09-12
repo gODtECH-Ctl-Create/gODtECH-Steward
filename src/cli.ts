@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { applySafeFixes } from "./rules/hygiene.js";
-import { initConfig } from "./core/config.js";
+import { collectFiles } from "./core/files.js";
+import { initConfig, loadConfig } from "./core/config.js";
 import { scanRepository } from "./core/scanner.js";
 import { hasCiFailure, formatSummary, toJson, toText } from "./core/report.js";
+import { applySafeFixes } from "./rules/hygiene.js";
 import type { Severity } from "./core/types.js";
 
 function usage(): string {
@@ -17,9 +18,6 @@ Usage:
   steward report [path] --output <file>
   steward fix [path] --safe [--dry-run]
   steward --version
-
-Environment:
-  STEWARD_NO_COLOR=1   Disable future terminal decoration.
 `;
 }
 
@@ -60,7 +58,6 @@ async function main(): Promise<void> {
   }
 
   const root = resolve(targetPath(args));
-
   if (command === "init") {
     const created = await initConfig(root);
     console.log(created ? "Created .steward.json" : ".steward.json already exists");
@@ -81,16 +78,14 @@ async function main(): Promise<void> {
       return;
     }
     console.log(`${candidates.length} safe remediation finding(s) available.`);
-    for (const finding of candidates) {
-      console.log(`- ${finding.path ?? "repository"}: ${finding.message}`);
-    }
+    for (const finding of candidates) console.log(`- ${finding.path ?? "repository"}: ${finding.message}`);
     if (args.includes("--dry-run")) {
       console.log("Dry run only. No files changed.");
       return;
     }
-    const files = (await import("./core/files.js")).collectFiles(root, (await import("./core/config.js")).loadConfig(root).then((value) => value.config) as never);
-    const fileEntries = await files;
-    const changed = applySafeFixes(fileEntries, candidates);
+    const configResult = await loadConfig(root);
+    const files = await collectFiles(root, configResult.config);
+    const changed = applySafeFixes(files, candidates);
     console.log(changed.length ? `Safe fixes applied to ${changed.length} file(s):\n${changed.map((file) => `- ${file}`).join("\n")}` : "No files required a change.");
     return;
   }
@@ -110,8 +105,8 @@ async function main(): Promise<void> {
   }
 
   if (args.includes("--ci")) {
-    const configResult = await import("./core/config.js").then((module) => module.loadConfig(root));
-    if (hasCiFailure(result, configResult.config.ci.failOn as Severity)) process.exitCode = 1;
+    const failOn = (await loadConfig(root)).config.ci.failOn as Severity;
+    if (hasCiFailure(result, failOn)) process.exitCode = 1;
   }
 }
 
