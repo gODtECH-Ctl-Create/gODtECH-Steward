@@ -23,6 +23,7 @@ The JSON document contains:
 - `healthScore`: deterministic health score from 0 to 100.
 - `git`: sanitized Git facts; internal tracked-file sets are not serialized.
 - `categoryCounts` and `ruleCounts`: aggregate finding counts.
+- `rulePacks`: active built-in pack identifiers and versions when available.
 
 ## Consumers
 
@@ -40,8 +41,9 @@ StackPilot may consume generic Steward findings while retaining ownership of gol
 2. Consumers must not assume internal TypeScript types, file layout, or implementation details.
 3. New optional fields may be added only in a backward-compatible schema revision; breaking changes require a new schema version.
 4. Finding rule IDs are stable identifiers within the contract and should be treated as data, not display text.
-5. `fixable: true` describes that Steward has a deterministic remediation path; consumers still decide whether and when it is appropriate to invoke remediation.
-6. Steward never requires Forge or StackPilot for standalone operation.
+5. Rule-pack identifiers and versions describe which built-in analysis families were active for the scan.
+6. `fixable: true` describes that Steward has a deterministic remediation path; consumers still decide whether and when it is appropriate to invoke remediation.
+7. Steward never requires Forge or StackPilot for standalone operation.
 
 ## Remediation boundary
 
