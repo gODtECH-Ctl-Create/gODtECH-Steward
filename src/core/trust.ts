@@ -122,9 +122,6 @@ export async function verifyRulePack(manifestPath: string, artifactPath: string,
   if (!policy.allow.includes(manifest.id)) throw new Error(`External rule pack is not allowed by policy: ${manifest.id}`);
   if (!policy.trustedPublishers.includes(manifest.publisher.id)) throw new Error(`External rule-pack publisher is not trusted: ${manifest.publisher.id}`);
 
-  const key = policy.trustedKeys[manifest.publisher.keyId];
-  if (!key) throw new Error(`No trusted Ed25519 key configured for ${manifest.publisher.keyId}.`);
-
   const artifact = await readFile(absoluteArtifact);
   const metadata = await stat(absoluteArtifact);
   if (metadata.size !== manifest.artifact.sizeBytes) {
@@ -135,9 +132,15 @@ export async function verifyRulePack(manifestPath: string, artifactPath: string,
   if (digest.toLowerCase() !== manifest.artifact.sha256.toLowerCase()) {
     throw new Error(`Artifact SHA-256 mismatch: manifest=${manifest.artifact.sha256}, actual=${digest}.`);
   }
+  if (!WebAssembly.validate(artifact)) throw new Error("Rule-pack artifact is not a valid WebAssembly (WASM) module.");
 
-  const signatureVerified = policy.requireSigned ? verifyManifestSignature(manifest, key) : false;
-  if (policy.requireSigned && !signatureVerified) throw new Error("External rule-pack signature verification failed.");
+  let signatureVerified = false;
+  if (policy.requireSigned) {
+    const key = policy.trustedKeys[manifest.publisher.keyId];
+    if (!key) throw new Error(`No trusted Ed25519 key configured for ${manifest.publisher.keyId}.`);
+    signatureVerified = verifyManifestSignature(manifest, key);
+    if (!signatureVerified) throw new Error("External rule-pack signature verification failed.");
+  }
 
   return {
     manifest,
@@ -145,6 +148,6 @@ export async function verifyRulePack(manifestPath: string, artifactPath: string,
     artifactSha256: digest,
     sizeBytes: metadata.size,
     signatureVerified,
-    sandboxEligible: true
+    sandboxEligible: false
   };
 }
