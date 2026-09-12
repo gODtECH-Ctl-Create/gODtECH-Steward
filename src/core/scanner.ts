@@ -5,6 +5,7 @@ import { loadConfig } from "./config.js";
 import { gitFacts } from "./git.js";
 import { enabledPackSummaries, enabledRules } from "./rules.js";
 import { scoreFindings } from "./score.js";
+import { findingFingerprint } from "./delta.js";
 import type { Category, Finding, ScanContext, ScanResult } from "./types.js";
 
 const SEVERITY_ORDER = new Map([["critical", 0], ["high", 1], ["medium", 2], ["low", 3], ["info", 4]]);
@@ -49,6 +50,13 @@ function configFinding(message: string): Finding {
   };
 }
 
+function withFingerprints(findings: readonly Finding[]): Finding[] {
+  return findings.map((finding) => ({
+    ...finding,
+    fingerprint: findingFingerprint(finding),
+  }));
+}
+
 export async function scanRepository(inputRoot: string): Promise<ScanResult> {
   const start = performance.now();
   const root = resolve(inputRoot);
@@ -81,7 +89,8 @@ export async function scanRepository(inputRoot: string): Promise<ScanResult> {
     }
   }
 
-  findings.sort((a, b) =>
+  const fingerprinted = withFingerprints(findings);
+  fingerprinted.sort((a, b) =>
     (SEVERITY_ORDER.get(a.severity) ?? 99) - (SEVERITY_ORDER.get(b.severity) ?? 99) ||
     (a.path ?? "").localeCompare(b.path ?? "") ||
     a.id.localeCompare(b.id)
@@ -92,12 +101,12 @@ export async function scanRepository(inputRoot: string): Promise<ScanResult> {
     root,
     scannedFiles: files.length,
     textFiles: files.filter((file) => file.isText).length,
-    findings,
-    healthScore: scoreFindings(findings),
+    findings: fingerprinted,
+    healthScore: scoreFindings(fingerprinted),
     durationMs: Math.max(0, Math.round(performance.now() - start)),
     git: context.git,
-    categoryCounts: categoryCounts(findings),
-    ruleCounts: ruleCounts(findings),
+    categoryCounts: categoryCounts(fingerprinted),
+    ruleCounts: ruleCounts(fingerprinted),
     rulePacks: enabledPacks,
   };
 }
