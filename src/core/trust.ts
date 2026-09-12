@@ -64,29 +64,34 @@ export function parseRulePackManifest(raw: unknown): RulePackManifest {
   assertManifest(typeof raw.version === "string" && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(raw.version), "invalid version");
 
   assertManifest(isRecord(raw.publisher), "publisher must be an object");
-  assertManifest(typeof raw.publisher.id === "string" && /^[a-z0-9][a-z0-9._-]{1,63}$/.test(raw.publisher.id), "invalid publisher.id");
-  assertManifest(typeof raw.publisher.keyId === "string" && /^ed25519:[A-Za-z0-9._:-]{3,127}$/.test(raw.publisher.keyId), "invalid publisher.keyId");
+  const publisher = raw.publisher;
+  assertManifest(typeof publisher.id === "string" && /^[a-z0-9][a-z0-9._-]{1,63}$/.test(publisher.id), "invalid publisher.id");
+  assertManifest(typeof publisher.keyId === "string" && /^ed25519:[A-Za-z0-9._:-]{3,127}$/.test(publisher.keyId), "invalid publisher.keyId");
 
   assertManifest(isRecord(raw.compatibility), "compatibility must be an object");
-  assertManifest(raw.compatibility.ruleApi === STEWARD_RULE_API_VERSION, "unsupported compatibility.ruleApi");
-  assertManifest(raw.compatibility.resultSchema === STEWARD_RESULT_SCHEMA_VERSION, "unsupported compatibility.resultSchema");
+  const compatibility = raw.compatibility;
+  assertManifest(compatibility.ruleApi === STEWARD_RULE_API_VERSION, "unsupported compatibility.ruleApi");
+  assertManifest(compatibility.resultSchema === STEWARD_RESULT_SCHEMA_VERSION, "unsupported compatibility.resultSchema");
 
   assertManifest(isRecord(raw.artifact), "artifact must be an object");
-  assertManifest(raw.artifact.format === "wasm", "artifact.format must be wasm");
-  assertManifest(typeof raw.artifact.sha256 === "string" && /^[A-Fa-f0-9]{64}$/.test(raw.artifact.sha256), "invalid artifact.sha256");
-  assertManifest(typeof raw.artifact.sizeBytes === "number" && Number.isSafeInteger(raw.artifact.sizeBytes) && raw.artifact.sizeBytes > 0 && raw.artifact.sizeBytes <= 100 * 1024 * 1024, "invalid artifact.sizeBytes");
-  assertManifest(typeof raw.artifact.uri === "string" && raw.artifact.uri.length > 0 && raw.artifact.uri.length <= 2048, "invalid artifact.uri");
+  const artifact = raw.artifact;
+  assertManifest(artifact.format === "wasm", "artifact.format must be wasm");
+  assertManifest(typeof artifact.sha256 === "string" && /^[A-Fa-f0-9]{64}$/.test(artifact.sha256), "invalid artifact.sha256");
+  assertManifest(typeof artifact.sizeBytes === "number" && Number.isSafeInteger(artifact.sizeBytes) && artifact.sizeBytes > 0 && artifact.sizeBytes <= 100 * 1024 * 1024, "invalid artifact.sizeBytes");
+  assertManifest(typeof artifact.uri === "string" && artifact.uri.length > 0 && artifact.uri.length <= 2048, "invalid artifact.uri");
 
   assertManifest(Array.isArray(raw.capabilities) && raw.capabilities.length >= 1 && raw.capabilities.every((value) => value === "repository.read"), "capabilities must contain only repository.read");
 
   assertManifest(isRecord(raw.limits), "limits must be an object");
-  assertManifest(Number.isSafeInteger(raw.limits.maxExecutionMs) && raw.limits.maxExecutionMs >= 1 && raw.limits.maxExecutionMs <= 10_000, "invalid limits.maxExecutionMs");
-  assertManifest(Number.isSafeInteger(raw.limits.maxMemoryMiB) && raw.limits.maxMemoryMiB >= 8 && raw.limits.maxMemoryMiB <= 256, "invalid limits.maxMemoryMiB");
-  assertManifest(Number.isSafeInteger(raw.limits.maxFindings) && raw.limits.maxFindings >= 1 && raw.limits.maxFindings <= 5_000, "invalid limits.maxFindings");
+  const limits = raw.limits;
+  assertManifest(Number.isSafeInteger(limits.maxExecutionMs) && limits.maxExecutionMs >= 1 && limits.maxExecutionMs <= 10_000, "invalid limits.maxExecutionMs");
+  assertManifest(Number.isSafeInteger(limits.maxMemoryMiB) && limits.maxMemoryMiB >= 8 && limits.maxMemoryMiB <= 256, "invalid limits.maxMemoryMiB");
+  assertManifest(Number.isSafeInteger(limits.maxFindings) && limits.maxFindings >= 1 && limits.maxFindings <= 5_000, "invalid limits.maxFindings");
 
   assertManifest(isRecord(raw.signature), "signature must be an object");
-  assertManifest(raw.signature.algorithm === "ed25519", "signature.algorithm must be ed25519");
-  assertManifest(typeof raw.signature.value === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(raw.signature.value), "signature.value must be base64");
+  const signature = raw.signature;
+  assertManifest(signature.algorithm === "ed25519", "signature.algorithm must be ed25519");
+  assertManifest(typeof signature.value === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(signature.value), "signature.value must be base64");
 
   return raw as unknown as RulePackManifest;
 }
@@ -132,7 +137,7 @@ export async function verifyRulePack(manifestPath: string, artifactPath: string,
   if (digest.toLowerCase() !== manifest.artifact.sha256.toLowerCase()) {
     throw new Error(`Artifact SHA-256 mismatch: manifest=${manifest.artifact.sha256}, actual=${digest}.`);
   }
-  if (!WebAssembly.validate(artifact)) throw new Error("Rule-pack artifact is not a valid WebAssembly (WASM) module.");
+  if (!WebAssembly.validate(Uint8Array.from(artifact))) throw new Error("Rule-pack artifact is not a valid WebAssembly (WASM) module.");
 
   let signatureVerified = false;
   if (policy.requireSigned) {
