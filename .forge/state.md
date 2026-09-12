@@ -1,7 +1,7 @@
 # gODtECH Steward state
 
 ## Current stage
-BUILD / VERIFY
+VERIFY / REVIEW
 
 ## Current baseline
 
@@ -18,7 +18,7 @@ Steward has a deterministic scan engine, first-class rule registry, terminal com
 
 ## Verification state
 
-Local reconstructed build: TypeScript compilation passed and 9 behavioral tests passed. CLI and Action runner behavior has been smoke-tested against the emitted artifact. Hosted GitHub Actions still require remote execution on GitHub and are not claimed as passed from this environment.
+The hardening implementation has been checked against the deterministic source contracts and emitted distribution. Local reconstruction passed TypeScript compilation and 9 behavioral tests; CLI and Action runner behavior was smoke-tested, including safe-fix and dry-run boundaries. GitHub's Steward scan workflow passed on executable commit `5e56681a...`. Final changes after that run are documentation/context and state-only updates, and are not claimed as remotely verified until GitHub runs against the final head.
 
 ## Known limitations
 
