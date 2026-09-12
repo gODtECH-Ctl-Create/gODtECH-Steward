@@ -76,7 +76,7 @@ Comparison output never copies source-file contents or secret values into delta 
 
 ## Distribution validation
 
-The distribution gate builds the actual npm tarball, inspects the published file set, installs it into a clean consumer directory, executes both CLI aliases, validates the versioned JSON output, runs the packaged GitHub Action, and rejects malformed Action argument payloads.
+The distribution gate builds the actual npm tarball, inspects the published file set, installs it into a clean consumer directory without registry access, executes both CLI aliases, validates the versioned JSON output, runs the packaged GitHub Action, and rejects malformed Action argument payloads.
 
 The package intentionally excludes the TypeScript source tree and `node_modules` while shipping the compiled engine required by both package consumers and the Action runner.
 
