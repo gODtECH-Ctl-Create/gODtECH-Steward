@@ -1,8 +1,6 @@
 import type { Finding, ScanContext, StewardRule } from "../core/types.js";
 
 const GENERATED_PATTERNS = [
-  /^dist\//,
-  /^build\//,
   /^coverage\//,
   /^\.next\//,
   /(^|\/)npm-debug\.log(?:\.\d+)?$/,
@@ -17,7 +15,15 @@ function hasFile(context: ScanContext, path: string): boolean {
 }
 
 function trackedGeneratedFiles(context: ScanContext): string[] {
-  return [...context.trackedFiles].filter((path) => GENERATED_PATTERNS.some((pattern) => pattern.test(path))).sort();
+  return [...context.trackedFiles]
+    .filter((path) => GENERATED_PATTERNS.some((pattern) => pattern.test(path)))
+    .sort();
+}
+
+function requiredGitignorePatterns(context: ScanContext): string[] {
+  const patterns = [".env", ".env.*"];
+  if (hasFile(context, "package.json")) patterns.push("node_modules/");
+  return patterns;
 }
 
 function gitignoreNeeds(content: string | undefined, patterns: string[]): string[] {
@@ -58,8 +64,7 @@ export const repositoryRule: StewardRule = {
         remediation: "Add a .gitignore appropriate to the project's languages and tooling."
       });
     } else if (gitignore.content) {
-      const missing = gitignoreNeeds(gitignore.content, [".env", ".env.*", "node_modules/"]);
-      for (const pattern of missing) {
+      for (const pattern of gitignoreNeeds(gitignore.content, requiredGitignorePatterns(context))) {
         findings.push({
           id: `repository.gitignore-missing.${pattern.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}`,
           rule: "gitignore-baseline",
@@ -74,7 +79,9 @@ export const repositoryRule: StewardRule = {
       }
     }
 
-    const large = context.files.filter((file) => file.size >= context.config.largeFileThresholdBytes).sort((a, b) => b.size - a.size);
+    const large = context.files
+      .filter((file) => file.size >= context.config.largeFileThresholdBytes)
+      .sort((a, b) => b.size - a.size);
     for (const file of large) {
       findings.push({
         id: `repository.large-file.${file.relPath}`,
@@ -99,7 +106,7 @@ export const repositoryRule: StewardRule = {
         path,
         fixable: false,
         confidence: "high",
-        remediation: "Remove generated output from version control only after confirming the project does not intentionally commit it. Add the path to .gitignore where appropriate."
+        remediation: "Remove the artifact from version control only after confirming it is disposable, then add an appropriate ignore rule."
       });
     }
 
