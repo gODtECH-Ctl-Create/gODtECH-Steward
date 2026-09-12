@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="gODtECH Steward keeps software repositories healthy with deterministic scans, explainable findings, safe remediation, and auditable evidence.">
+  <meta name="theme-color" content="#07080c">
+  <title>gODtECH Steward — Keep your software healthy</title>
+  <link rel="icon" href="assets/steward-hero.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="nav-shell">
+    <nav class="nav container" aria-label="Primary navigation">
+      <a class="brand" href="#top" aria-label="gODtECH Steward home"><span class="mark">G</span><span>gODtECH <strong>Steward</strong></span></a>
+      <div class="nav-links">
+        <a href="#why">Why Steward</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#install">Install</a>
+        <a href="#integration">Integrations</a>
+        <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward" rel="noreferrer">GitHub</a>
+      </div>
+      <a class="button button-small" href="https://www.npmjs.com/package/@godtech/steward" rel="noreferrer">Install from npm</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section id="top" class="hero container">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="pulse"></span> Open source · Apache-2.0 · v0.1.0</div>
+        <h1>Keep your repository healthy.<br><span>Know exactly what changed.</span></h1>
+        <p class="hero-lede">gODtECH Steward turns software housekeeping into a repeatable engineering step. Scan deterministically, understand the finding, fix only what is safe, and keep a machine-readable trail of repository health.</p>
+        <div class="hero-actions">
+          <a class="button" href="#install">Install Steward</a>
+          <a class="button button-secondary" href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.0" rel="noreferrer">View v0.1.0 release</a>
+        </div>
+        <div class="signal-row" aria-label="Release facts">
+          <span><strong>0.1.0</strong> public release</span>
+          <span><strong>Deterministic</strong> findings</span>
+          <span><strong>Safe by default</strong></span>
+          <span><strong>GitHub Action</strong> included</span>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <img src="assets/steward-hero.svg" alt="Steward control room showing an 88 out of 100 repository health score, findings and scan evidence">
+      </div>
+    </section>
+
+    <section id="why" class="section container">
+      <div class="section-heading">
+        <span class="kicker">WHY STEWARD</span>
+        <h2>Housekeeping should be observable, repeatable, and boring.</h2>
+        <p>Steward focuses on evidence-backed repository health instead of pretending every cleanup task needs artificial intelligence (AI) or destructive automation.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card"><span class="feature-index">01</span><h3>Deterministic scans</h3><p>The same repository state should produce the same useful finding. Stable fingerprints make issues trackable across changes.</p></article>
+        <article class="feature-card"><span class="feature-index">02</span><h3>Explainable findings</h3><p>Every result tells you what was found, where it was found, how confident Steward is, and what remediation makes sense.</p></article>
+        <article class="feature-card"><span class="feature-index">03</span><h3>Safe remediation</h3><p>Scanning never writes. Fixes require explicit <code>--safe</code>, and dry runs never mutate your repository.</p></article>
+        <article class="feature-card"><span class="feature-index">04</span><h3>Evidence you can use</h3><p>Human reports, JSON output, health deltas, Continuous Integration (CI) decisions, and FORGE evidence all share the same core scan contract.</p></article>
+      </div>
+    </section>
+
+    <section id="workflow" class="section workflow-section">
+      <div class="container">
+        <div class="section-heading split-heading">
+          <div><span class="kicker">THE MODEL</span><h2>Observe → explain → decide → maintain.</h2></div>
+          <p>Steward keeps ordinary repository facts deterministic and leaves architecture decisions, product judgment, and orchestration to the systems that own those jobs.</p>
+        </div>
+        <div class="workflow">
+          <div class="workflow-step"><span>01</span><h3>Scan</h3><code>steward scan .</code><p>Collect repository facts, apply versioned rule packs, and produce stable findings.</p></div>
+          <div class="workflow-step"><span>02</span><h3>Understand</h3><code>steward doctor .</code><p>See health, severity counts, categories, and the issues that deserve attention.</p></div>
+          <div class="workflow-step"><span>03</span><h3>Remediate</h3><code>steward fix --safe</code><p>Apply only findings with an explicit deterministic safe-fix capability.</p></div>
+          <div class="workflow-step"><span>04</span><h3>Prove</h3><code>steward report --output ...</code><p>Persist JSON reports, compare health over time, or export evidence for other systems.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container">
+      <div class="section-heading"><span class="kicker">WHAT STEWARD CHECKS</span><h2>One scanner. Several kinds of repository health.</h2></div>
+      <div class="checks-grid">
+        <article class="check-card"><span>REPOSITORY</span><h3>Repository hygiene</h3><p>README, ignore files, large files, tracked disposable outputs, generated artifacts.</p></article>
+        <article class="check-card"><span>SECURITY</span><h3>Credential signals</h3><p>Tracked environment files and high-confidence secret-like patterns without exposing secret values.</p></article>
+        <article class="check-card"><span>DOCS</span><h3>Documentation integrity</h3><p>Broken or malformed local Markdown links and other documentation consistency issues.</p></article>
+        <article class="check-card"><span>DEPENDENCIES</span><h3>Dependency hygiene</h3><p>Package-manager metadata and lockfile consistency, including conflicting lockfiles.</p></article>
+        <article class="check-card"><span>MAINTENANCE</span><h3>Maintenance drift</h3><p>Merge-conflict markers, TODO/FIXME maintenance signals, and stale development artifacts.</p></article>
+        <article class="check-card"><span>METADATA</span><h3>Project identity</h3><p>Package identity, descriptions, and publishable metadata where the repository exposes them.</p></article>
+      </div>
+    </section>
+
+    <section id="install" class="section install-section">
+      <div class="container">
+        <div class="section-heading split-heading">
+          <div><span class="kicker">INSTALL</span><h2>One package. One command.</h2></div>
+          <p>Steward 0.1.0 is published to npm as <code>@godtech/steward</code>. The GitHub release also carries the package tarball, checksum file, and Software Bill of Materials (SBOM).</p>
+        </div>
+        <div class="install-layout">
+          <div class="install-guide card">
+            <div class="tab-row" role="tablist" aria-label="Install platform">
+              <button class="tab active" data-tab="unix" role="tab" aria-selected="true">Linux / macOS</button>
+              <button class="tab" data-tab="windows" role="tab" aria-selected="false">Windows PowerShell</button>
+            </div>
+            <div id="unix" class="tab-panel active" role="tabpanel">
+              <p class="step-label">Install globally from npm</p>
+              <div class="codebox"><button class="copy" data-copy="npm install -g @godtech/steward@0.1.0">Copy</button><pre><code>npm install -g @godtech/steward@0.1.0</code></pre></div>
+              <p class="step-label">Scan a repository</p>
+              <div class="codebox"><button class="copy" data-copy="steward scan .\nsteward doctor .\nsteward scan . --json">Copy</button><pre><code>steward scan .
+steward doctor .
+steward scan . --json</code></pre></div>
+            </div>
+            <div id="windows" class="tab-panel" role="tabpanel" hidden>
+              <p class="step-label">Install globally from npm</p>
+              <div class="codebox"><button class="copy" data-copy="npm.cmd install -g @godtech/steward@0.1.0">Copy</button><pre><code>npm.cmd install -g @godtech/steward@0.1.0</code></pre></div>
+              <div class="notice"><strong>PowerShell execution policy</strong><p>PowerShell may block the generated <code>steward.ps1</code> shim. You can invoke the Windows command shim directly:</p><div class="codebox compact"><button class="copy" data-copy="steward.cmd --version\nsteward.cmd scan .">Copy</button><pre><code>steward.cmd --version
+steward.cmd scan .</code></pre></div></div>
+            </div>
+          </div>
+          <aside class="release-card card">
+            <span class="status-pill">PUBLIC RELEASE</span>
+            <h3>0.1.0</h3>
+            <p>Deterministic software and repository housekeeping from gODtECH.</p>
+            <dl>
+              <div><dt>npm</dt><dd>@godtech/steward</dd></div>
+              <div><dt>Distribution</dt><dd>npm + GitHub Release</dd></div>
+              <div><dt>Integrity</dt><dd>SHA-256 + attestation</dd></div>
+              <div><dt>License</dt><dd>Apache-2.0</dd></div>
+            </dl>
+            <div class="release-links"><a class="text-link" href="https://www.npmjs.com/package/@godtech/steward" rel="noreferrer">Open npm package →</a><a class="text-link" href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.0" rel="noreferrer">Open GitHub release →</a></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="section terminal-section container">
+      <div class="section-heading"><span class="kicker">REAL CLI OUTPUT</span><h2>Health is a signal, not a slogan.</h2><p>A real Steward 0.1.0 scan can be read by a human or consumed as structured data by another tool.</p></div>
+      <div class="terminal card">
+        <div class="terminal-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="terminal-title">gODtECH Steward · repository scan</span></div>
+        <pre><code><span class="prompt">PS C:\project&gt;</span> steward.cmd scan .
+
+<span class="muted">gODtECH Steward</span>
+<span class="accent">Health 88/100</span>
+69 files scanned | 69 text files | 677ms
+Git MASTER @ 5632bf3a
+
+Findings: 6
+Critical 0 | High 0 | Medium 0 | Low 6 | Info 0
+
+<span class="warn">[LOW]</span> final-newline   .forge/decisions/0004-trusted-external-rule-packs.md
+<span class="warn">[LOW]</span> todo-fixme       src/rules/maintenance.ts:17
+<span class="warn">[LOW]</span> todo-fixme       test/delta.test.ts:9
+<span class="warn">[LOW]</span> todo-fixme       test/forge-evidence.test.ts:9
+<span class="warn">[LOW]</span> todo-fixme       test/rule-packs.test.ts:35
+<span class="warn">[LOW]</span> todo-fixme       test/rules.test.ts:51
+
+<span class="safe">SAFE FIX</span> available for the final-newline finding.
+<span class="prompt">PS C:\project&gt;</span> steward.cmd scan . --json
+<span class="safe">{ "schemaVersion": 1, "healthScore": 88, ... }</span></code></pre>
+      </div>
+    </section>
+
+    <section id="integration" class="section integration-section">
+      <div class="container">
+        <div class="section-heading split-heading">
+          <div><span class="kicker">WORKS WITH THE ECOSYSTEM</span><h2>Build with StackPilot. Govern with FORGE. Keep it healthy with Steward.</h2></div>
+          <p>Steward is intentionally independent. Integrations use public commands and versioned machine-readable contracts rather than private implementation imports.</p>
+        </div>
+        <div class="ecosystem">
+          <article class="eco-card forge"><span class="eco-label">gODtECH FORGE</span><strong>ORCHESTRATE</strong><p>FORGE can call Steward when repository-health evidence or safe maintenance belongs in a governed workflow.</p><a href="https://github.com/gODtECH-Ctl-Create/gODtECH-FORGE" rel="noreferrer">Open FORGE →</a></article>
+          <article class="eco-card stack"><span class="eco-label">STACKPILOT</span><strong>BUILD</strong><p>StackPilot owns scaffolding and golden paths. It may consume Steward findings without duplicating generic housekeeping rules.</p><a href="https://github.com/gODtECH-Ctl-Create/StackPilot" rel="noreferrer">Open StackPilot →</a></article>
+          <article class="eco-card steward"><span class="eco-label">STEWARD</span><strong>KEEP HEALTHY</strong><p>Steward remains a focused maintenance engine you can use with or without either neighboring system.</p><a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward" rel="noreferrer">Open Steward →</a></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section safety-section container">
+      <div class="safety-grid">
+        <div>
+          <span class="kicker">SAFETY MODEL</span>
+          <h2>Observe first. Explain second. Modify only when explicitly safe.</h2>
+          <p>Steward does not delete uncertain files, mutate the repository during scanning, expose credentials in findings, or execute arbitrary external JavaScript rule packages.</p>
+        </div>
+        <div class="safety-list">
+          <div><strong>01</strong><span>Scanning is read-only.</span></div>
+          <div><strong>02</strong><span><code>--safe</code> is required for remediation.</span></div>
+          <div><strong>03</strong><span><code>--dry-run</code> never writes.</span></div>
+          <div><strong>04</strong><span>Security findings are observation-only.</span></div>
+          <div><strong>05</strong><span>External rule packs are opt-in and verification-first.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container docs-section">
+      <div class="docs-card card">
+        <div><span class="kicker">NEXT</span><h2>Turn repository health into part of the engineering loop.</h2><p>Run Steward locally, add it to Continuous Integration, export FORGE evidence, and keep the repository's maintenance state visible over time.</p></div>
+        <div class="docs-actions"><a class="button" href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/blob/MASTER/README.md" rel="noreferrer">Read the docs</a><a class="button button-secondary" href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/blob/MASTER/docs/ROADMAP.md" rel="noreferrer">View roadmap</a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer container">
+    <div><strong>gODtECH Steward</strong><span>Deterministic software and repository housekeeping.</span></div>
+    <div class="footer-links"><a href="https://www.npmjs.com/package/@godtech/steward" rel="noreferrer">npm</a><a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.0" rel="noreferrer">Release</a><a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward" rel="noreferrer">GitHub</a></div>
+    <div class="footer-meta">Apache-2.0 · gODtECH</div>
+  </footer>
+</body>
+</html>

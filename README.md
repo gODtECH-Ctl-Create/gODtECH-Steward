@@ -1,208 +1,362 @@
-# gODtECH Steward
-
-> Keep your software healthy.
-
-**gODtECH Steward** turns software housekeeping into a repeatable engineering step. It scans repositories deterministically, produces explainable findings, and applies only explicitly enabled safe fixes.
+<a name="readme-top"></a>
 
 <div align="center">
 
-**CLI-first** · **GitHub Action** · **Deterministic** · **Safe by default**
+<img src="./site/assets/steward-hero.svg" alt="gODtECH Steward repository health control room" width="100%" />
+
+<p>
+  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/actions"><img src="https://img.shields.io/github/actions/workflow/status/gODtECH-Ctl-Create/gODtECH-Steward/ci.yml?branch=MASTER&style=for-the-badge&label=CI" alt="CI status" /></a>
+  <a href="https://www.npmjs.com/package/@godtech/steward"><img src="https://img.shields.io/npm/v/@godtech/steward?style=for-the-badge&label=npm" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@godtech/steward"><img src="https://img.shields.io/npm/dm/@godtech/steward?style=for-the-badge&label=downloads" alt="npm monthly downloads" /></a>
+  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.0"><img src="https://img.shields.io/badge/release-v0.1.0-8bffb0?style=for-the-badge&labelColor=0b0d12" alt="Steward v0.1.0 release" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-72e7ff?style=for-the-badge&labelColor=0b0d12" alt="Apache License 2.0" /></a>
+</p>
+
+### Deterministic software and repository housekeeping.
+
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=18&duration=2400&pause=750&color=8BFFB0&center=true&vCenter=true&width=1000&lines=Scan+without+guessing.;Explain+what+is+unhealthy.;Fix+only+what+is+safe.;Track+health+with+stable+evidence.;Keep+the+repository+healthy." alt="Animated Steward capabilities" />
+
+<p>
+  <a href="https://godtech-ctl-create.github.io/gODtECH-Steward/">Website</a> ·
+  <a href="https://www.npmjs.com/package/@godtech/steward">npm</a> ·
+  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.0">Release</a> ·
+  <a href="#-quick-start">Quick start</a> ·
+  <a href="#-what-steward-checks">What it checks</a> ·
+  <a href="#-architecture">Architecture</a>
+</p>
 
 </div>
 
-> Built with **gODtECH FORGE** — Framework for Orchestrated Reasoning, Governance & Engineering.
-
 ---
 
-## What Steward does
+## ⚡ The 30-second version
 
-Steward is built for developers and teams that want repository maintenance to be visible, repeatable, and safe.
+**gODtECH Steward** turns software housekeeping into a repeatable engineering step.
 
-It currently checks:
-
-| Area | Checks |
-| --- | --- |
-| **Repository** | README, `.gitignore`, large files, disposable tracked artifacts, generated test/tool outputs |
-| **Security** | Tracked environment files and high-confidence credential patterns |
-| **Documentation** | Broken and malformed local Markdown links |
-| **Dependencies** | Package-manager and lockfile consistency, invalid `package.json` |
-| **Project metadata** | Package identity and publishable-package metadata completeness |
-| **Maintenance** | Unresolved merge-conflict markers and TODO/FIXME maintenance markers |
-| **Hygiene** | Trailing whitespace and missing final newlines |
-| **Reporting** | Health score, severity counts, category counts, JSON output, stable finding fingerprints |
-| **Rule packs** | Versioned `core` and `security` packs with pack-level or rule-level disabling |
-| **Deltas** | Deterministic before/after health, finding, severity, and category changes |
-| **FORGE evidence** | Safe observed repository-health evidence for gODtECH FORGE workflows |
-| **Trusted packs** | Manifest, compatibility, artifact digest, publisher signature, policy, and WASM boundary verification |
-
-Steward deliberately does **not** delete uncertain files, rewrite architecture, or require artificial intelligence (AI) for deterministic repository facts.
-
-## Workflow
+It inspects a repository deterministically, produces explainable findings, calculates a health signal, and offers only explicitly supported safe remediation. The normal scan path does not require artificial intelligence (AI), a hosted service, or a model call.
 
 ```text
 REPOSITORY
-    |
-    v
+    ↓
 CONFIG + GIT FACTS
-    |
-    v
-FILE COLLECTION
-    |
-    v
-RULE PACKS
-    |
-    v
-RULE EXECUTION
-    |
-    v
+    ↓
+DETERMINISTIC RULE PACKS
+    ↓
 FINDINGS + FINGERPRINTS
-    |
-    +--> human report
-    +--> JSON report
-    +--> CI decision
-    +--> before/after delta
-    +--> FORGE evidence
-    +--> explicit safe remediation
-
-EXTERNAL PACK (OPT-IN ONLY)
-    |
-    v
-MANIFEST VALIDATION
-    |
-    v
-POLICY + PUBLISHER TRUST
-    |
-    v
-SHA-256 + Ed25519
-    |
-    v
-WASM VALIDATION / SANDBOX PROBE
-    |
-    v
-EXECUTION STILL DISABLED IN 0.1.x
+    ↓
+HEALTH + REPORTS + CI
+    ↓
+OPTIONAL SAFE FIX
 ```
 
-## Installation
+Steward is intentionally **not** an autonomous cleanup bot. It does not delete uncertain files, rewrite architecture, or silently mutate the repository.
 
-Steward is currently developed from source.
+> **v0.1.0 is public.** The package is available on npm, the GitHub Action is available from the repository, and the release workflow publishes with npm Trusted Publishing plus GitHub artifact attestations.
+
+---
+
+## 🚀 Quick start
+
+### Install from npm
 
 ```bash
-git clone https://github.com/gODtECH-Ctl-Create/gODtECH-Steward.git
-cd gODtECH-Steward
-npm ci
-npm run build
-npm install -g .
+npm install -g @godtech/steward@0.1.0
+steward --version
 ```
 
-The command-line interface (CLI) is available as:
+Windows PowerShell may block the generated `.ps1` shim because of the local execution policy. In that case, use the Windows command shim:
+
+```powershell
+npm.cmd install -g @godtech/steward@0.1.0
+steward.cmd --version
+```
+
+### Scan a repository
 
 ```bash
-steward --help
-godtech-steward --help
+cd /path/to/your-project
+steward scan .
 ```
 
-## CLI usage
-
-Initialize repository configuration:
+Machine-readable output:
 
 ```bash
-steward init
+steward scan . --json
 ```
 
-Scan a repository:
+Diagnostic summary:
 
 ```bash
-steward scan
+steward doctor .
 ```
 
-Inspect the active rule packs and individual rule states:
+### Run safe remediation
+
+Preview first:
 
 ```bash
-steward rules
+steward fix . --safe --dry-run
 ```
 
-Get a diagnostic view with category summary:
+Apply only supported safe fixes:
 
 ```bash
-steward doctor
+steward fix . --safe
 ```
 
-Get machine-readable output:
+### Install the GitHub Action
+
+```yaml
+name: Steward
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  steward:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gODtECH-Ctl-Create/gODtECH-Steward@v0.1.0
+```
+
+Prefer a reviewed release tag or exact commit SHA over a moving development branch in production workflows.
+
+---
+
+## 🧭 Why Steward exists
+
+Repository health degrades quietly. Generated outputs get committed. Documentation links rot. lockfiles drift. Conflict markers survive a rushed merge. Secret-like material accidentally enters Git. Old maintenance markers accumulate until nobody knows whether they still matter.
+
+Steward makes those signals visible without turning housekeeping into a destructive automation problem.
+
+| Common problem | Steward's answer |
+| --- | --- |
+| “Is this repository healthy?” | Deterministic health score + severity summary |
+| “What exactly is wrong?” | File-scoped findings with explanations and remediation guidance |
+| “Can I automate the cleanup?” | Only explicitly fixable findings can be remediated |
+| “Can another tool consume the result?” | Versioned JSON contract with stable fingerprints |
+| “Did the repository improve?” | Before/after delta reporting |
+| “Can this run in CI?” | Deterministic CI threshold mode + GitHub Action |
+| “Can FORGE use the evidence?” | Dedicated `forge-evidence` projection |
+
+---
+
+## ✨ What Steward checks
+
+| Area | Current coverage |
+| --- | --- |
+| **Repository** | README conventions, `.gitignore`, large files, tracked disposable artifacts, generated test/tool outputs |
+| **Security** | Tracked environment files and high-confidence credential-like patterns |
+| **Documentation** | Broken and malformed local Markdown links |
+| **Dependencies** | Conflicting package-manager metadata and lockfiles, invalid package metadata |
+| **Project metadata** | Package identity, descriptions, publishable package completeness |
+| **Maintenance** | Merge-conflict markers and TODO/FIXME maintenance signals |
+| **Hygiene** | Trailing whitespace and missing final newlines |
+| **Reporting** | Health score, severity/category counts, JSON output, stable fingerprints |
+| **Rule packs** | Versioned built-in `core` and `security` packs with policy controls |
+| **Deltas** | Deterministic health and finding changes between reports |
+| **FORGE evidence** | Safe observed repository-health evidence for gODtECH FORGE workflows |
+| **Trusted packs** | Manifest, policy, digest, publisher signature, and WebAssembly (WASM) verification boundary |
+
+Steward deliberately does not treat every `dist/` or `build/` directory as disposable. Projects may intentionally ship compiled output.
+
+---
+
+## 🌀 How it works
+
+```mermaid
+flowchart LR
+    A[Repository] --> B[Config + Git facts]
+    B --> C[File collector]
+    C --> D[Versioned rule packs]
+    D --> E[Findings]
+    E --> F[Stable fingerprints]
+    F --> G{Outputs}
+    G --> H[Human report]
+    G --> I[JSON]
+    G --> J[CI decision]
+    G --> K[FORGE evidence]
+    G --> L[Optional safe fix]
+```
+
+The important boundary is simple:
+
+**Steward observes first. It does not guess what you meant to delete.**
+
+---
+
+## 📊 Health, findings, and deltas
+
+A scan produces more than a list of warnings.
+
+```text
+Health 88/100
+69 files scanned | 69 text files
+
+Findings: 6
+Critical 0 | High 0 | Medium 0 | Low 6 | Info 0
+```
+
+Each finding can carry:
+
+- rule and category;
+- severity and confidence;
+- path and line where available;
+- remediation guidance;
+- whether an explicit safe fix exists;
+- a stable SHA-256 fingerprint for correlation.
+
+Generate a report:
 
 ```bash
-steward scan --json
+steward report . --output current.json
 ```
 
-Write a JSON report:
+Compare against an earlier report:
 
 ```bash
-steward report --output .steward-report.json
+steward report . --output current.json --compare previous.json
 ```
 
-Compare the current repository with an earlier Steward report:
+The delta tracks health, added/resolved findings, severity changes, and category changes without copying source contents or secret values into the comparison artifact.
+
+---
+
+## 🛡️ Safety model
+
+Steward follows one operating rule:
+
+> **Observe first. Explain second. Modify only when explicitly safe.**
+
+Scanning is read-only. `--dry-run` never writes. `fix` refuses to modify files without `--safe`, and security findings are observation-only.
+
+External executable rule packs use a separate verification-first boundary:
+
+```text
+manifest
+  ↓
+compatibility
+  ↓
+allowlist + publisher trust
+  ↓
+SHA-256 digest
+  ↓
+Ed25519 signature
+  ↓
+WASM validation
+  ↓
+optional sandbox probe
+```
+
+**Third-party executable rule packs are still disabled in the 0.1.x release line.** The current implementation verifies the trust boundary but does not load arbitrary external executable rules into ordinary repository scans.
+
+---
+
+## 🧩 Rule packs
+
+Built-in analysis is organized into versioned packs so Steward can grow without turning the scanner into a hard-coded monolith.
+
+```text
+core@2
+├── repository
+├── documentation
+├── dependencies
+├── maintenance
+├── metadata
+└── hygiene
+
+security@1
+└── security
+```
+
+Disable an entire pack:
+
+```json
+{
+  "packs": {
+    "disabled": ["security"]
+  }
+}
+```
+
+Disable individual rules:
+
+```json
+{
+  "rules": {
+    "disabled": ["todo-fixme"]
+  }
+}
+```
+
+Use:
 
 ```bash
-steward report --output current.json --compare previous.json
+steward rules .
 ```
 
-The comparison adds deterministic health, finding, severity, and category deltas. Finding fingerprints remain stable when an issue moves within the same file, and comparison output never copies source contents into delta evidence.
+to inspect active pack and rule state.
 
-Export observed repository-health evidence for gODtECH FORGE (Framework for Orchestrated Reasoning, Governance & Engineering):
+---
 
-```bash
-steward forge-evidence
+## 🔌 FORGE + StackPilot
+
+Steward is independent, but it fits into the wider gODtECH engineering system through public contracts.
+
+```text
+                    gODtECH FORGE
+             orchestration / policy / workflow
+                         │
+             ┌───────────┴───────────┐
+             │                       │
+             ▼                       ▼
+        StackPilot                Steward
+           BUILD                KEEP HEALTHY
+             │                       │
+             └───────────┬───────────┘
+                         ▼
+                   TARGET PROJECT
 ```
 
-Write the evidence artifact for a workflow step or retained benchmark evidence:
+### gODtECH FORGE
+
+FORGE may call Steward when repository-health evidence or safe maintenance is relevant. Steward exposes a dedicated observed-evidence artifact:
 
 ```bash
 steward forge-evidence . --output .steward-forge-evidence.json
 ```
 
-The evidence artifact is intentionally **not** a FORGE benchmark result. It contains observed Steward scan data only and does not invent benchmark IDs, control/assisted runs, provider metrics, or productivity claims.
+The artifact does not fabricate FORGE benchmark IDs, control/assisted runs, provider billing, or productivity claims.
 
-Preview safe fixes without changing files:
+### StackPilot
 
-```bash
-steward fix --safe --dry-run
-```
+StackPilot may consume the public Steward scan contract while retaining ownership of scaffolding, golden paths, and stack-specific readiness.
 
-Apply only findings explicitly marked safe:
+Neither integration is required for Steward to work.
 
-```bash
-steward fix --safe
-```
+---
 
-Fail a continuous integration (CI) job when the configured severity threshold is present:
+## 📦 Configuration
+
+Initialize a repository-owned configuration:
 
 ```bash
-steward scan --ci
+steward init .
 ```
 
-Verify a future external rule-pack artifact against repository trust policy:
+This creates `.steward.json`, allowing repository-specific policy without changing the engine.
 
-```bash
-steward pack verify manifest.json --artifact pack.wasm
-```
-
-Run the conservative WebAssembly (WASM) sandbox probe as an additional verification step:
-
-```bash
-steward pack verify manifest.json --artifact pack.wasm --sandbox --json
-```
-
-The command validates the manifest, allowlist, trusted publisher, artifact size, SHA-256 digest, Ed25519 signature, and WASM module boundary. It does **not** enable third-party rule execution in the current release line.
-
-## Configuration
-
-`steward init` creates `.steward.json`. Configuration is repository-owned so forks and teams can change policy without changing the engine.
+Example:
 
 ```json
 {
   "version": 1,
   "exclude": ["vendor/**"],
-  "maxFileSizeBytes": 10485760,
-  "largeFileThresholdBytes": 5242880,
   "ci": {
     "failOn": "critical"
   },
@@ -215,145 +369,20 @@ The command validates the manifest, allowlist, trusted publisher, artifact size,
   "externalPacks": {
     "requireSigned": true,
     "allow": ["example.security-hygiene"],
-    "trustedPublishers": ["example-org"],
-    "trustedKeys": {
-      "ed25519:example-key-1": "-----BEGIN PUBLIC KEY-----..."
-    }
+    "trustedPublishers": ["example-org"]
   }
 }
 ```
 
-The external-pack policy is **opt-in**. A malformed trust policy fails closed for `steward pack verify`. The current engine does not load arbitrary executable third-party rule packs during repository scans.
+Malformed external-pack trust configuration fails closed during `steward pack verify`.
 
-Disable a complete built-in pack:
+---
 
-```json
-{
-  "packs": {
-    "disabled": ["security"]
-  }
-}
-```
-
-Disable individual rules when finer control is required:
-
-```json
-{
-  "rules": {
-    "disabled": ["todo-fixme"]
-  }
-}
-```
-
-## GitHub Action
-
-Steward includes a composite GitHub Action that invokes the same compiled engine as the CLI.
-
-```yaml
-name: Steward
-
-on:
-  pull_request:
-  push
-
-permissions:
-  contents: read
-
-jobs:
-  steward:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: gODtECH-Ctl-Create/gODtECH-Steward@main
-```
-
-Custom arguments are passed as a JSON array to avoid shell re-parsing:
-
-```yaml
-      - uses: gODtECH-Ctl-Create/gODtECH-Steward@main
-        with:
-          args: '["scan", "--ci", "--json"]'
-```
-
-During development, pin the Action to a reviewed branch or release tag instead of a moving development reference.
-
-## Trusted external rule packs
-
-External packs are not part of Steward's built-in scan path. They must first pass the versioned trust contract in [`schemas/steward-rule-pack-manifest.schema.json`](schemas/steward-rule-pack-manifest.schema.json) and the repository policy described in [`schemas/steward-external-pack-policy.schema.json`](schemas/steward-external-pack-policy.schema.json).
-
-Trust verification requires:
-
-```text
-manifest schema
-+ exact rule API compatibility
-+ exact result schema compatibility
-+ allowlisted pack identity
-+ trusted publisher
-+ SHA-256 artifact match
-+ Ed25519 signature verification
-+ valid WASM artifact
-+ capability declaration
-+ bounded execution metadata
-```
-
-The sandbox prototype additionally rejects WASM modules with imports and performs a bounded worker-based instantiation probe. The probe is intentionally not a permission to execute third-party rules in the release scanner yet. Memory accounting for arbitrary defined WASM linear memory and the full rule host API remain future work.
-
-Arbitrary JavaScript or Node.js rule packages are not a supported trust mechanism.
-
-See [`docs/trusted-rule-packs.md`](docs/trusted-rule-packs.md) for the complete security model.
-
-## Distribution verification
-
-Before a release, Steward can verify the actual npm package consumers receive:
-
-```bash
-npm run verify:package
-```
-
-The verification builds the package, inspects its archive contents, installs the generated tarball into a clean consumer directory, executes both `steward` and `godtech-steward`, validates the versioned JSON scan contract, exercises the `forge-evidence` command, runs the packaged GitHub Action, and confirms malformed Action argument payloads are rejected.
-
-The distribution workflow runs this verification remotely on every push and pull request. This keeps the CLI, package archive, Action runner, and Forge evidence adapter tied to the same compiled `dist/` artifact.
-
-## Safety model
-
-Steward follows one rule: **observe first, explain second, modify only when the requested fix is deterministic and explicitly enabled**.
-
-`fix` always refuses to modify files without `--safe`. `--dry-run` never writes. Security findings are observation-only. The current safe fixer only normalizes formatting-level hygiene findings.
-
-External packs add a separate trust boundary: **verification first, execution last**. A pack that fails identity, compatibility, integrity, signature, policy, or sandbox checks is rejected before execution. External packs cannot invoke Steward remediation.
-
-## Integration with the gODtECH ecosystem
-
-Steward remains independently usable. It is a focused maintenance engine, not another orchestrator or scaffolding system.
-
-```text
-                    gODtECH FORGE
-             orchestration / policy / workflow
-                         |
-             +-----------+-----------+
-             |                       |
-             v                       v
-        StackPilot                Steward
-        BUILD IT             KEEP IT HEALTHY
-             |                       |
-             +-----------+-----------+
-                         v
-                   TARGET PROJECT
-```
-
-- **gODtECH FORGE** may invoke Steward through the public command, JSON result contract, or `forge-evidence` adapter when repository-health evidence is relevant.
-- **StackPilot** may optionally consume generic Steward findings while keeping its own golden-path checks separate.
-- Neither integration is required for Steward's standalone operation.
-- Generic maintenance rules have one canonical implementation in Steward.
-- External rule packs remain Steward-owned and must use the versioned trust boundary rather than private FORGE or StackPilot APIs.
-
-The stable scan result is versioned as `schemaVersion: 1`. The dedicated FORGE evidence artifact is separately versioned as `schemaVersion: 1` and explicitly identifies itself as observed `repository-health` evidence rather than a benchmark result. See [`docs/integration.md`](docs/integration.md), [`docs/deltas.md`](docs/deltas.md), [`schemas/steward-result.schema.json`](schemas/steward-result.schema.json), and [`schemas/steward-rule-pack-manifest.schema.json`](schemas/steward-rule-pack-manifest.schema.json).
-
-## Architecture
+## 🏗️ Architecture
 
 ```text
                     +----------------+
-                    | CLI / Action   |
+                    |  CLI / Action  |
                     +-------+--------+
                             |
                             v
@@ -369,31 +398,76 @@ The stable scan result is versioned as `schemaVersion: 1`. The dedicated FORGE e
           +-----------------+-----------------+
                             |
                             v
-                    stable findings + fingerprints
+                    stable findings
                             |
               +-------------+-------------+
               |             |             |
               v             v             v
-            text          JSON            CI
-           report         report         gate
+            human         JSON            CI
+            report        contract        gate
                             |
                             +---------> FORGE evidence
                             |
                             v
-                      safe remediation
+                     safe remediation
                             |
                             v
-                     optional delta
+                         delta
 
-External pack verification is a separate opt-in path:
-manifest -> policy -> digest -> signature -> WASM boundary -> sandbox probe
+External pack verification:
+manifest → policy → digest → signature → WASM → probe
 ```
 
-See [`docs/architecture.md`](docs/architecture.md), [`docs/rules.md`](docs/rules.md), [`docs/deltas.md`](docs/deltas.md), [`docs/integration.md`](docs/integration.md), [`docs/trusted-rule-packs.md`](docs/trusted-rule-packs.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Core rules implement a read-only `StewardRule` contract and return data-only findings. The scanner owns orchestration, while adapters own presentation or integration contracts.
 
-## Development
+---
 
-The repository follows the gODtECH FORGE delivery model: material work is tracked, implemented on a dedicated branch, verified, and documented before merge.
+## 🧰 Command map
+
+| Command | Purpose |
+| --- | --- |
+| `steward init` | Create repository-owned `.steward.json` configuration |
+| `steward scan` | Deterministic repository-health scan |
+| `steward doctor` | Scan plus concise health/category diagnostics |
+| `steward rules` | Inspect active rule packs and rules |
+| `steward report` | Write a JSON report and optional delta |
+| `steward forge-evidence` | Export observed repository-health evidence for FORGE |
+| `steward fix --safe` | Apply only explicitly supported safe fixes |
+| `steward pack verify` | Verify a trusted external rule-pack artifact |
+
+---
+
+## 🔐 Release + provenance
+
+**gODtECH Steward 0.1.0** is publicly released.
+
+The release pipeline is tag-driven and includes:
+
+- npm Trusted Publishing through OpenID Connect (OIDC);
+- GitHub artifact attestations for the npm tarball and its Software Bill of Materials (SBOM);
+- SHA-256 release checksums;
+- package distribution verification on Ubuntu and Windows;
+- automated npm publication verification;
+- automated GitHub Release creation.
+
+[View the npm package →](https://www.npmjs.com/package/@godtech/steward)  
+[View the v0.1.0 release →](https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.0)
+
+---
+
+## 🌐 Website
+
+The product landing page is published through GitHub Pages:
+
+**https://godtech-ctl-create.github.io/gODtECH-Steward/**
+
+It mirrors the same release facts and install paths as this README and is intentionally a static site with no application backend.
+
+---
+
+## 🧪 Development
+
+Steward follows the gODtECH FORGE delivery model: material work is implemented on a dedicated branch, verified, and documented before merge.
 
 ```bash
 npm ci
@@ -403,8 +477,44 @@ npm test
 npm run verify:package
 ```
 
-## Status
+For release work:
 
-**Active development / evidence-aware maintenance**
+```bash
+npm run verify:release
+```
 
-The deterministic engine, CLI, reporting contract, reproducible installation path, configuration validation, versioned rule packs, stable finding fingerprints, before/after deltas, broader repository-health checks, consumer-style package verification, Forge evidence adapter, StackPilot report adapter boundary, conservative remediation model, and GitHub Action integration are established. Trusted external pack verification and a conservative WASM sandbox probe are now prototyped; external executable rule execution remains disabled until the full host API, resource accounting, provenance, audit, and malicious-pack test suite are release-ready.
+See the release procedure in [`docs/release.md`](docs/release.md) and architecture in [`docs/architecture.md`](docs/architecture.md).
+
+---
+
+## 🗺️ Roadmap
+
+The foundation and first public release are complete. Near-term work focuses on improving signal quality and expanding deterministic analysis only where evidence justifies the complexity.
+
+- [x] Deterministic repository scanner
+- [x] Versioned rule packs
+- [x] Stable finding fingerprints
+- [x] Health scoring and CI mode
+- [x] Safe remediation + dry-run
+- [x] JSON reports and deltas
+- [x] FORGE evidence adapter
+- [x] StackPilot contract boundary
+- [x] Trusted external pack verification prototype
+- [x] Public npm release with provenance and attestations
+- [x] GitHub Pages product site
+- [ ] Additional high-signal language-aware health checks
+- [ ] Full audited execution model for trusted external executable packs
+
+---
+
+## 📄 License
+
+Steward is available under the **Apache License 2.0**. See [`LICENSE`](./LICENSE).
+
+<div align="center">
+
+**Keep the repository healthy. Keep the evidence clean.**
+
+<a href="#readme-top">↑ back to top</a>
+
+</div>
