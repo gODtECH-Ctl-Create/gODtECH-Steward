@@ -12,7 +12,7 @@ The first supported executable artifact format should be **WebAssembly (WASM)** 
 
 ## Trust model
 
-A pack is eligible to execute only when all checks pass:
+A pack is eligible to progress toward execution only when all checks pass:
 
 1. The manifest validates against the versioned rule-pack manifest schema.
 2. The declared Steward rule API is compatible with the installed Steward version.
@@ -21,12 +21,28 @@ A pack is eligible to execute only when all checks pass:
 5. The pack identifier is permitted by repository/user policy.
 6. The requested capabilities are allowed. The default capability set is read-only repository facts with no network, process, environment, or write access.
 7. Runtime limits are present and within Steward's allowed maximums.
+8. The WASM module passes the sandbox admission probe.
 
 Unsigned, unverifiable, incompatible, or disallowed packs must fail closed before execution.
 
+## Current implementation status
+
+Steward currently provides **verification and sandbox admission tooling only**. External packs are **not loaded by normal scans or the GitHub Action**.
+
+The CLI surface is:
+
+```bash
+steward pack verify manifest.json --artifact pack.wasm
+steward pack verify manifest.json --artifact pack.wasm --sandbox --json
+```
+
+This implementation verifies identity, policy, compatibility, SHA-256 integrity, Ed25519 signature, and WASM validity. The optional sandbox probe rejects imported host capabilities and performs bounded worker-based module instantiation.
+
+The probe is intentionally a prototype. It does not yet expose the repository host API, invoke arbitrary exported rule functions, or provide complete runtime accounting for WASM linear memory. Those gaps are release blockers for actual third-party rule execution.
+
 ## Manifest
 
-The public manifest is versioned independently from the scan result contract. A future manifest uses these concepts:
+The public manifest is versioned independently from the scan result contract.
 
 ```json
 {
@@ -64,7 +80,7 @@ The public manifest is versioned independently from the scan result contract. A 
 }
 ```
 
-The schema requires stable identity, compatibility, artifact integrity, declared capabilities, bounded resources, and signature metadata. The exact registry transport is intentionally unspecified at this stage.
+The schema requires stable identity, compatibility, artifact integrity, declared capabilities, bounded resources, and signature metadata. The exact registry transport remains unspecified until the verification model is fully released.
 
 ## Capability boundary
 
@@ -106,19 +122,24 @@ Built-in pack versions such as `core@2` remain separate from the external manife
 
 ## Policy
 
-Future repository-owned configuration may allow or deny specific packs and publishers, for example:
+Repository-owned configuration controls admission:
 
 ```json
 {
   "externalPacks": {
     "requireSigned": true,
     "allow": ["example.security-hygiene"],
-    "trustedPublishers": ["example-org"]
+    "trustedPublishers": ["example-org"],
+    "trustedKeys": {
+      "ed25519:example-key-1": "-----BEGIN PUBLIC KEY-----..."
+    }
   }
 }
 ```
 
-The policy is opt-in and must fail closed when trust configuration is malformed.
+The policy is opt-in and fails closed when malformed. The default configuration contains no allowed external packs and no trusted publishers.
+
+The policy schema is [`../schemas/steward-external-pack-policy.schema.json`](../schemas/steward-external-pack-policy.schema.json).
 
 ## Supply-chain requirements
 
@@ -132,7 +153,8 @@ Before an external pack can execute in a release build, Steward needs:
 - reproducible packaging where practical;
 - provenance information for the artifact build;
 - explicit offline behavior when registry access is unavailable;
-- audit output showing which external packs were accepted or rejected and why.
+- audit output showing which external packs were accepted or rejected and why;
+- full malicious-pack and resource-exhaustion test coverage.
 
 A future registry must not silently replace an already accepted artifact.
 
@@ -152,12 +174,12 @@ A failed pack must degrade to a finding about the pack execution problem. It mus
 
 ## Rollout order
 
-1. Manifest schema and compatibility tests.
-2. Trust-policy configuration model.
-3. Signature and digest verification.
-4. WASM host interface and sandbox prototype.
-5. Consumer-style tests with malicious/invalid packs.
-6. Documentation and audit output.
+1. Manifest schema and compatibility tests. **Complete.**
+2. Trust-policy configuration model. **Complete.**
+3. Signature and digest verification. **Complete as verification-only tooling.**
+4. WASM host interface and sandbox prototype. **Admission prototype complete; host API and full resource enforcement remain.**
+5. Consumer-style tests with malicious/invalid packs. **In progress.**
+6. Documentation and audit output. **In progress.**
 7. Only then consider a public registry or third-party pack publishing workflow.
 
-Until these steps are complete, Steward must continue to reject arbitrary external executable rule packs.
+Until the remaining gates are complete, Steward must continue to reject arbitrary external executable rule packs during normal scans and GitHub Action execution.
