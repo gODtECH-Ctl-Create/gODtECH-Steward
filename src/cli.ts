@@ -6,6 +6,7 @@ import { initConfig, loadConfig } from "./core/config.js";
 import { scanRepository } from "./core/scanner.js";
 import { RULE_PACKS, rulesForPacks } from "./core/rules.js";
 import { calculateScanDelta, isScanResult } from "./core/delta.js";
+import { toForgeEvidenceJson } from "./core/forge-evidence.js";
 import { hasCiFailure, formatSummary, toJson, toText } from "./core/report.js";
 import { applySafeFixes } from "./rules/hygiene.js";
 import type { Severity } from "./core/types.js";
@@ -18,6 +19,7 @@ Usage:
   steward scan [path] [--json] [--ci]
   steward doctor [path] [--json] [--ci]
   steward report [path] --output <file> [--compare <report>]
+  steward forge-evidence [path] [--output <file>] [--compare <report>]
   steward rules [path]
   steward fix [path] --safe [--dry-run]
   steward --version
@@ -30,7 +32,7 @@ function option(args: string[], name: string): string | undefined {
 }
 
 function targetPath(args: string[]): string {
-  const commandWords = new Set(["scan", "doctor", "report", "rules", "fix", "init"]);
+  const commandWords = new Set(["scan", "doctor", "report", "forge-evidence", "rules", "fix", "init"]);
   for (let i = 1; i < args.length; i += 1) {
     const arg = args[i];
     if (arg === "--output" || arg === "--compare") {
@@ -90,7 +92,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (!["scan", "doctor", "report", "rules", "fix"].includes(command)) {
+  if (!["scan", "doctor", "report", "forge-evidence", "rules", "fix"].includes(command)) {
     throw new Error(`Unknown command: ${command}\n\n${usage()}`);
   }
 
@@ -119,6 +121,20 @@ async function main(): Promise<void> {
     const files = await collectFiles(root, configResult.config);
     const changed = applySafeFixes(files, candidates);
     console.log(changed.length ? `Safe fixes applied to ${changed.length} file(s):\n${changed.map((file) => `- ${file}`).join("\n")}` : "No files required a change.");
+    return;
+  }
+
+  if (command === "forge-evidence") {
+    const comparePath = option(args, "--compare");
+    const scanDelta = comparePath ? calculateScanDelta(await readPreviousReport(root, comparePath), result) : undefined;
+    const output = option(args, "--output");
+    const evidence = toForgeEvidenceJson(result, configResult.config.ci.failOn, scanDelta);
+    if (output) {
+      await writeFile(resolve(root, output), evidence + "\n", "utf8");
+      console.log(`FORGE evidence written to ${resolve(root, output)}`);
+    } else {
+      console.log(evidence);
+    }
     return;
   }
 
