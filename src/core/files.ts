@@ -14,20 +14,18 @@ export function normalisePath(value: string): string {
   return value.split(sep).join("/").replace(/^\.\//, "");
 }
 
-function escapeRegex(value: string): string {
-  return value.replace(/[|\\{}()[\]^$+?.]/g, "\\$&");
-}
-
 function excludePattern(pattern: string): RegExp {
   const normalised = normalisePath(pattern.trim()).replace(/^\/+|\/+$/g, "");
-  const source = `^${escapeRegex(normalised).replaceAll("\\*\\*", ".*").replaceAll("\\*", "[^/]*")}(?:/|$)`;
+  const escaped = normalised.replace(/[|\\{}()[\]^$+?.*]/g, "\\$&");
+  const source = `^${escaped.replaceAll("\\*\\*", ".*").replaceAll("\\*", "[^/]*")}(?:/|$)`;
   return new RegExp(source);
 }
 
 function shouldExclude(relPath: string, configured: string[]): boolean {
   const path = normalisePath(relPath);
   const patterns = [...DEFAULT_EXCLUDES].map(excludePattern).concat(configured.map(excludePattern));
-  return patterns.some((pattern) => pattern.test(path) || pattern.test(path.split("/").slice(-1)[0] ?? ""));
+  const basename = path.split("/").at(-1) ?? path;
+  return patterns.some((pattern) => pattern.test(path) || pattern.test(basename));
 }
 
 async function isBinary(path: string): Promise<boolean> {
