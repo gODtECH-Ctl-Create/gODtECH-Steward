@@ -9,6 +9,8 @@ import { calculateScanDelta, isScanResult } from "./core/delta.js";
 import { toForgeEvidenceJson } from "./core/forge-evidence.js";
 import { hasCiFailure, formatSummary, toJson, toText } from "./core/report.js";
 import { applySafeFixes } from "./rules/hygiene.js";
+import { verifyRulePack } from "./core/trust.js";
+import { probeWasmSandbox } from "./core/wasm-sandbox.js";
 import type { Severity } from "./core/types.js";
 
 function usage(): string {
@@ -22,6 +24,7 @@ Usage:
   steward forge-evidence [path] [--output <file>] [--compare <report>]
   steward rules [path]
   steward fix [path] --safe [--dry-run]
+  steward pack verify <manifest> --artifact <file> [--sandbox] [--json]
   steward --version
 `;
 }
@@ -73,6 +76,54 @@ async function readPreviousReport(root: string, reportPath: string): Promise<Awa
   return candidate;
 }
 
+async function verifyPackCommand(args: string[]): Promise<void> {
+  if (args[1] !== "verify") throw new Error("pack supports only: verify <manifest> --artifact <file> [--sandbox] [--json]");
+  const manifestPath = args[2];
+  const artifactPath = option(args, "--artifact");
+  if (!manifestPath || !artifactPath) throw new Error("pack verify requires <manifest> and --artifact <file>.");
+
+  const root = resolve(".");
+  const configResult = await loadConfig(root);
+  if (configResult.warning) throw new Error(`Refusing external pack verification because .steward.json is invalid: ${configResult.warning}`);
+
+  const verified = await verifyRulePack(manifestPath, artifactPath, configResult.config.externalPacks);
+  let sandbox;
+  if (args.includes("--sandbox")) {
+    const bytes = await readFile(resolve(artifactPath));
+    sandbox = await probeWasmSandbox(bytes, verified.manifest.limits);
+    if (!sandbox.eligible) throw new Error(`WASM sandbox eligibility failed: ${sandbox.imports.length ? `imports are not allowed (${sandbox.imports.join(", ")})` : "module could not be admitted"}.`);
+  }
+
+  const output = {
+    verified: true,
+    executionEnabled: false,
+    manifestSchemaVersion: verified.manifest.schemaVersion,
+    ruleApi: verified.manifest.compatibility.ruleApi,
+    resultSchema: verified.manifest.compatibility.resultSchema,
+    pack: `${verified.manifest.id}@${verified.manifest.version}`,
+    publisher: verified.manifest.publisher.id,
+    keyId: verified.manifest.publisher.keyId,
+    artifact: {
+      path: verified.artifactPath,
+      sizeBytes: verified.sizeBytes,
+      sha256: verified.artifactSha256,
+      format: verified.manifest.artifact.format
+    },
+    signatureVerified: verified.signatureVerified,
+    sandbox: sandbox ?? { requested: false, eligible: verified.sandboxEligible, executed: false }
+  };
+  if (args.includes("--json")) console.log(JSON.stringify(output, null, 2));
+  else {
+    console.log("gODtECH Steward external rule-pack verification");
+    console.log(`Verified: ${output.pack}`);
+    console.log(`Publisher: ${output.publisher}`);
+    console.log(`Signature: ${output.signatureVerified ? "verified" : "not required"}`);
+    console.log(`Artifact SHA-256: ${output.artifact.sha256}`);
+    console.log(`Execution enabled: no`);
+    console.log(`Sandbox probe: ${sandbox ? (sandbox.eligible ? "eligible" : "rejected") : "not requested"}`);
+  }
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0] ?? "help";
@@ -82,6 +133,11 @@ async function main(): Promise<void> {
   }
   if (command === "help" || command === "--help" || command === "-h") {
     console.log(usage());
+    return;
+  }
+
+  if (command === "pack") {
+    await verifyPackCommand(args);
     return;
   }
 
