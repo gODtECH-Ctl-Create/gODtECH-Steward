@@ -40,6 +40,11 @@
     "ruleCounts": {
       "type": "object",
       "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "rulePacks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/rulePack" },
+      "uniqueItems": true
     }
   },
   "$defs": {
@@ -69,6 +74,15 @@
         "confidence": { "enum": ["high", "medium", "low"] },
         "details": { "type": "string" },
         "remediation": { "type": "string" }
+      }
+    },
+    "rulePack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "integer", "minimum": 1 }
       }
     },
     "git": {

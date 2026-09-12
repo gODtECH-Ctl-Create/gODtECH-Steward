@@ -29,6 +29,7 @@ It currently checks:
 | **Maintenance** | Unresolved merge-conflict markers and TODO/FIXME maintenance markers |
 | **Hygiene** | Trailing whitespace and missing final newlines |
 | **Reporting** | Health score, severity counts, category counts, JSON output |
+| **Rule packs** | Versioned `core` and `security` packs with pack-level or rule-level disabling |
 
 Steward deliberately does **not** delete uncertain files, rewrite architecture, or require artificial intelligence (AI) for deterministic repository facts.
 
@@ -44,7 +45,10 @@ CONFIG + GIT FACTS
 FILE COLLECTION
     |
     v
-RULE REGISTRY
+RULE PACKS
+    |
+    v
+RULE EXECUTION
     |
     v
 FINDINGS
@@ -86,6 +90,12 @@ Scan a repository:
 
 ```bash
 steward scan
+```
+
+Inspect the active rule packs and individual rule states:
+
+```bash
+steward rules
 ```
 
 Get a diagnostic view with category summary:
@@ -137,13 +147,36 @@ steward scan --ci
   "ci": {
     "failOn": "critical"
   },
+  "packs": {
+    "disabled": []
+  },
   "rules": {
     "disabled": []
   }
 }
 ```
 
-`exclude` supports repository-relative wildcard patterns. Disabled entries use registered rule IDs such as `security`, `dependencies`, or `maintenance`.
+Disable a complete built-in pack:
+
+```json
+{
+  "packs": {
+    "disabled": ["security"]
+  }
+}
+```
+
+Disable individual rules when finer control is required:
+
+```json
+{
+  "rules": {
+    "disabled": ["todo-fixme"]
+  }
+}
+```
+
+Pack-level policy is evaluated first, then individual rule-level policy. Steward does not currently load arbitrary executable third-party rule packs from configuration.
 
 ## GitHub Action
 
@@ -183,6 +216,32 @@ Steward follows one rule: **observe first, explain second, modify only when the 
 
 `fix` always refuses to modify files without `--safe`. `--dry-run` never writes. Security findings are observation-only. The current safe fixer only normalizes formatting-level hygiene findings.
 
+## Integration with the gODtECH ecosystem
+
+Steward remains independently usable. It is a focused maintenance engine, not another orchestrator or scaffolding system.
+
+```text
+                    gODtECH FORGE
+             orchestration / policy / workflow
+                         |
+             +-----------+-----------+
+             |                       |
+             v                       v
+        StackPilot                Steward
+        BUILD IT             KEEP IT HEALTHY
+             |                       |
+             +-----------+-----------+
+                         v
+                   TARGET PROJECT
+```
+
+- **gODtECH FORGE** may invoke Steward through the public command or machine-readable result contract when maintenance evidence is relevant.
+- **StackPilot** may optionally consume generic Steward findings while keeping its own golden-path checks separate.
+- Neither integration is required for Steward's standalone operation.
+- Generic maintenance rules have one canonical implementation in Steward.
+
+The stable integration result is versioned as `schemaVersion: 1`. See [`docs/integration.md`](docs/integration.md) and [`schemas/steward-result.schema.json`](schemas/steward-result.schema.json).
+
 ## Architecture
 
 ```text
@@ -198,7 +257,7 @@ Steward follows one rule: **observe first, explain second, modify only when the 
           +-----------------+-----------------+
           |                 |                 |
           v                 v                 v
-     config + Git       file collector    rule registry
+     config + Git       file collector     rule packs
           |                 |                 |
           +-----------------+-----------------+
                             |
@@ -215,7 +274,7 @@ Steward follows one rule: **observe first, explain second, modify only when the 
                       safe remediation
 ```
 
-See [`docs/architecture.md`](docs/architecture.md) and [`docs/rules.md`](docs/rules.md).
+See [`docs/architecture.md`](docs/architecture.md), [`docs/rules.md`](docs/rules.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Development
 
@@ -229,6 +288,6 @@ npm test
 
 ## Status
 
-**Early development / hardened foundation**
+**Active development / rule-pack architecture**
 
-The deterministic engine, CLI, reporting contract, configuration validation, first rule set, conservative remediation model, and GitHub Action integration are established. Future work can add language-aware analysis, dependency graphs, richer GitHub metadata, architecture checks, and broader product-health capabilities without replacing the core pipeline.
+The deterministic engine, CLI, reporting contract, configuration validation, versioned rule packs, first rule set, conservative remediation model, and GitHub Action integration are established. Future work can add trusted external rule-pack distribution, richer evidence and health deltas, language-aware analysis, dependency graphs, and broader product-health capabilities without replacing the core pipeline.

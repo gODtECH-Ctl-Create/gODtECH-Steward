@@ -39,6 +39,9 @@ export interface ScanConfig {
   ci: {
     failOn: Severity;
   };
+  packs: {
+    disabled: string[];
+  };
   rules: {
     disabled: string[];
   };
@@ -68,8 +71,22 @@ export interface StewardRule {
   run(context: ScanContext): Finding[];
 }
 
+export interface RulePack {
+  id: string;
+  version: number;
+  description: string;
+  rules: readonly StewardRule[];
+}
+
+export interface RulePackSummary {
+  id: string;
+  version: number;
+}
+
 export interface ScanResult {
   version: 1;
+  schemaVersion?: 1;
+  tool?: "gODtECH Steward";
   root: string;
   scannedFiles: number;
   textFiles: number;
@@ -79,6 +96,7 @@ export interface ScanResult {
   git: GitFacts;
   categoryCounts: Partial<Record<Category, number>>;
   ruleCounts: Record<string, number>;
+  rulePacks?: RulePackSummary[];
 }
 
 export interface ConfigLoadResult {

@@ -6,6 +6,9 @@
   "ci": {
     "failOn": "critical"
   },
+  "packs": {
+    "disabled": []
+  },
   "rules": {
     "disabled": []
   }
