@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 test("trusted external rule-pack manifest is valid JSON and remains design-only", async () => {
   const here = dirname(fileURLToPath(import.meta.url));
-  const schemaPath = resolve(here, "../schemas/steward-rule-pack-manifest.schema.json");
+  const schemaPath = resolve(here, "../../schemas/steward-rule-pack-manifest.schema.json");
   const schema = JSON.parse(await readFile(schemaPath, "utf8")) as Record<string, unknown>;
 
   assert.equal(
@@ -24,7 +24,7 @@ test("trusted external rule-pack manifest is valid JSON and remains design-only"
     true,
   );
 
-  const documentation = await readFile(resolve(here, "../docs/trusted-rule-packs.md"), "utf8");
+  const documentation = await readFile(resolve(here, "../../docs/trusted-rule-packs.md"), "utf8");
   assert.match(documentation, /External packs are \*\*analysis-only\*\*/);
   assert.match(documentation, /arbitrary JavaScript or Node\.js/);
 });
