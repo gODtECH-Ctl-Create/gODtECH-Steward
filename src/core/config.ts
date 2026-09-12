@@ -7,7 +7,7 @@ const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info"];
 export const DEFAULT_CONFIG: ScanConfig = {
   version: 1,
   exclude: [],
-  maxFileSizeBytes: 2 * 1024 * 1024,
+  maxFileSizeBytes: 10 * 1024 * 1024,
   largeFileThresholdBytes: 5 * 1024 * 1024,
   ci: { failOn: "critical" },
   rules: { disabled: [] }
