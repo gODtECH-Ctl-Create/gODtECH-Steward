@@ -10,9 +10,7 @@ Steward has a deterministic scan engine, first-class rule contracts, versioned m
 ## Active rule packs
 
 - `core@2`: repository, documentation, dependency, maintenance, metadata, and hygiene checks.
-- `security@1`: high-confidence credential and security-pattern checks.
-
-The core pack was bumped from version 1 to version 2 because its rule inventory changed.
+- `security@1`: high-confidence repository security and credential-pattern checks.
 
 ## Current CLI
 
@@ -28,9 +26,9 @@ The core pack was bumped from version 1 to version 2 because its rule inventory 
 
 The package manifest ships only the consumer-facing compiled engine under `dist/src`, schemas, README, license, and GitHub Action runner files. The development source tree is not included in the npm package.
 
-`npm run verify:package` builds and inspects the actual tarball, installs it into a clean consumer directory, exercises both command aliases, validates the `schemaVersion: 1` result, executes the packaged Action runner, and verifies malformed Action argument payloads are rejected.
+`npm run verify:package` builds and inspects the actual npm tarball, installs it into a clean consumer directory with offline package installation, exercises both command aliases, validates the `schemaVersion: 1` result, executes the packaged Action runner, and verifies malformed Action argument payloads are rejected.
 
-The dedicated Distribution workflow runs this consumer-style verification on pushes and pull requests.
+The dedicated Distribution workflow runs this consumer-style verification on pushes and pull requests. This keeps the CLI, package archive, and Action runner tied to the same compiled `dist/` artifact.
 
 ## Integration contract
 
