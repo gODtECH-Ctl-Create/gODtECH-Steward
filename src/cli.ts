@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { collectFiles } from "./core/files.js";
 import { initConfig, loadConfig } from "./core/config.js";
 import { scanRepository } from "./core/scanner.js";
 import { RULE_PACKS, rulesForPacks } from "./core/rules.js";
+import { calculateScanDelta, isScanResult } from "./core/delta.js";
 import { hasCiFailure, formatSummary, toJson, toText } from "./core/report.js";
 import { applySafeFixes } from "./rules/hygiene.js";
 import type { Severity } from "./core/types.js";
@@ -16,7 +17,7 @@ Usage:
   steward init [path]
   steward scan [path] [--json] [--ci]
   steward doctor [path] [--json] [--ci]
-  steward report [path] --output <file>
+  steward report [path] --output <file> [--compare <report>]
   steward rules [path]
   steward fix [path] --safe [--dry-run]
   steward --version
@@ -32,7 +33,7 @@ function targetPath(args: string[]): string {
   const commandWords = new Set(["scan", "doctor", "report", "rules", "fix", "init"]);
   for (let i = 1; i < args.length; i += 1) {
     const arg = args[i];
-    if (arg === "--output") {
+    if (arg === "--output" || arg === "--compare") {
       i += 1;
       continue;
     }
@@ -60,6 +61,14 @@ function printRules(disabledPacks: readonly string[], disabledRules: readonly st
       console.log(`  [${status}] ${rule.id} - ${rule.description}`);
     }
   }
+}
+
+async function readPreviousReport(root: string, reportPath: string): Promise<Awaited<ReturnType<typeof scanRepository>>> {
+  const candidate = JSON.parse(await readFile(resolve(root, reportPath), "utf8")) as unknown;
+  if (!isScanResult(candidate)) {
+    throw new Error(`Comparison report is not a valid gODtECH Steward scan result: ${reportPath}`);
+  }
+  return candidate;
 }
 
 async function main(): Promise<void> {
@@ -116,8 +125,14 @@ async function main(): Promise<void> {
   if (command === "report") {
     const output = option(args, "--output");
     if (!output) throw new Error("report requires --output <file>");
-    await writeFile(resolve(root, output), toJson(result) + "\n", "utf8");
+    const comparePath = option(args, "--compare");
+    const scanDelta = comparePath ? calculateScanDelta(await readPreviousReport(root, comparePath), result) : undefined;
+    await writeFile(resolve(root, output), toJson(result, scanDelta) + "\n", "utf8");
     console.log(`Report written to ${resolve(root, output)}`);
+    if (scanDelta) {
+      const sign = scanDelta.health.delta > 0 ? "+" : "";
+      console.log(`Health delta ${sign}${scanDelta.health.delta} (${scanDelta.health.direction}); ${scanDelta.findings.added} added, ${scanDelta.findings.resolved} resolved.`);
+    }
   } else if (command === "doctor") {
     if (args.includes("--json")) console.log(toJson(result));
     else printDoctor(result);

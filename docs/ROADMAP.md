@@ -19,16 +19,16 @@ Steward is not a second orchestration framework, project scaffolder, or autonomo
 - [x] GitHub Action path using the same compiled engine.
 - [x] Versioned machine-readable result contract.
 - [x] Built-in versioned rule packs with pack-level and rule-level policy.
+- [x] Reproducible package installation with a committed npm lockfile and `npm ci` verification.
+- [x] Stable finding fingerprints and deterministic before/after health deltas.
 
 ## Near-term priorities
 
-- [ ] Reproducible package installation with a committed npm lockfile and `npm ci` verification.
 - [ ] Broader deterministic repository analysis where the evidence is provable and the scope is justified.
-- [ ] Richer evidence and health deltas comparing repository state before and after changes.
 - [ ] Trusted external rule-pack distribution with explicit compatibility and safety rules.
 - [ ] Forge adapter using the public result contract.
 - [ ] Optional StackPilot adapter for generic maintenance signals.
-- [ ] Release-grade package distribution and signed artifacts.
+- [ ] Release-grade package distribution, signing, and artifact provenance.
 
 ## Rule-pack architecture
 
@@ -49,6 +49,14 @@ security@1
 ```
 
 A generic housekeeping capability belongs here rather than being copied into Forge or StackPilot.
+
+## Scan evidence and deltas
+
+Every finding may expose a stable SHA-256 fingerprint derived from its identity and path. The fingerprint is intentionally independent of line number so the same issue remains correlated when code moves.
+
+`steward report . --output current.json --compare previous.json` produces a deterministic delta covering health change, added and resolved finding references, unchanged findings, severity changes, and category changes.
+
+Comparison output never copies source-file contents or secret values into delta evidence.
 
 ## gODtECH ecosystem
 

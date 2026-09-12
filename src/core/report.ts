@@ -1,3 +1,4 @@
+import type { ScanDelta } from "./delta.js";
 import type { Category, Finding, ScanResult, Severity } from "./types.js";
 
 const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info"];
@@ -11,7 +12,7 @@ function countBySeverity(findings: readonly Finding[]): Record<Severity, number>
   }, {} as Record<Severity, number>);
 }
 
-export function toJson(result: ScanResult): string {
+export function toJson(result: ScanResult, scanDelta?: ScanDelta): string {
   const { trackedFiles: _trackedFiles, ...gitReport } = result.git;
   return JSON.stringify(
     {
@@ -19,6 +20,7 @@ export function toJson(result: ScanResult): string {
       tool: "gODtECH Steward",
       ...result,
       git: gitReport,
+      ...(scanDelta ? { delta: scanDelta } : {}),
     },
     null,
     2,
