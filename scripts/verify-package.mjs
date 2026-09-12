@@ -3,6 +3,8 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join, relative, sep } from "node:path";
 
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+
 function run(command, args, options = {}) {
   return execFileSync(command, args, { stdio: "pipe", encoding: "utf8", ...options });
 }
@@ -12,7 +14,7 @@ function assert(condition, message) {
 }
 
 function runInstalledBin(binPath, args, cwd) {
-  const result = spawnSync(binPath, args, { cwd, encoding: "utf8" });
+  const result = spawnSync(binPath, args, { cwd, encoding: "utf8", shell: process.platform === "win32" });
   assert(result.status === 0, `Installed CLI failed: ${result.stderr}`);
   return result.stdout.trim();
 }
@@ -32,7 +34,7 @@ try {
     "utf8",
   );
 
-  const packJson = JSON.parse(run("npm", ["pack", "--json"]));
+  const packJson = JSON.parse(run(npmCommand, ["pack", "--json"]));
   const filename = packJson?.[0]?.filename;
   assert(typeof filename === "string" && filename.length > 0, "npm pack did not return an archive filename.");
   const tarball = join(process.cwd(), filename);
@@ -58,11 +60,11 @@ try {
   assert(!normalised.some((entry) => entry.startsWith("src/")), "Published package unexpectedly contains TypeScript source files.");
   assert(!normalised.some((entry) => entry.startsWith("node_modules/")), "Published package unexpectedly contains node_modules.");
 
-  run("npm", ["install", "--offline", "--no-package-lock", "--ignore-scripts", tarball], { cwd: install });
+  run(npmCommand, ["install", "--offline", "--no-package-lock", "--ignore-scripts", tarball], { cwd: install });
   const packageRoot = join(install, "node_modules", "@godtech", "steward");
   const cli = join(packageRoot, "dist", "src", "cli.js");
-  const stewardBin = join(install, "node_modules", ".bin", "steward");
-  const godtechStewardBin = join(install, "node_modules", ".bin", "godtech-steward");
+  const stewardBin = join(install, "node_modules", ".bin", process.platform === "win32" ? "steward.cmd" : "steward");
+  const godtechStewardBin = join(install, "node_modules", ".bin", process.platform === "win32" ? "godtech-steward.cmd" : "godtech-steward");
   const actionRunner = join(packageRoot, "action-runner.cjs");
 
   const version = runInstalledBin(stewardBin, ["--version"], fixture);
