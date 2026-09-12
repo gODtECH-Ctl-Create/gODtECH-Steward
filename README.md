@@ -33,6 +33,7 @@ It currently checks:
 | **Rule packs** | Versioned `core` and `security` packs with pack-level or rule-level disabling |
 | **Deltas** | Deterministic before/after health, finding, severity, and category changes |
 | **FORGE evidence** | Safe observed repository-health evidence for gODtECH FORGE workflows |
+| **Trusted packs** | Manifest, compatibility, artifact digest, publisher signature, policy, and WASM boundary verification |
 
 Steward deliberately does **not** delete uncertain files, rewrite architecture, or require artificial intelligence (AI) for deterministic repository facts.
 
@@ -62,6 +63,23 @@ FINDINGS + FINGERPRINTS
     +--> before/after delta
     +--> FORGE evidence
     +--> explicit safe remediation
+
+EXTERNAL PACK (OPT-IN ONLY)
+    |
+    v
+MANIFEST VALIDATION
+    |
+    v
+POLICY + PUBLISHER TRUST
+    |
+    v
+SHA-256 + Ed25519
+    |
+    v
+WASM VALIDATION / SANDBOX PROBE
+    |
+    v
+EXECUTION STILL DISABLED IN 0.1.x
 ```
 
 ## Installation
@@ -161,6 +179,20 @@ Fail a continuous integration (CI) job when the configured severity threshold is
 steward scan --ci
 ```
 
+Verify a future external rule-pack artifact against repository trust policy:
+
+```bash
+steward pack verify manifest.json --artifact pack.wasm
+```
+
+Run the conservative WebAssembly (WASM) sandbox probe as an additional verification step:
+
+```bash
+steward pack verify manifest.json --artifact pack.wasm --sandbox --json
+```
+
+The command validates the manifest, allowlist, trusted publisher, artifact size, SHA-256 digest, Ed25519 signature, and WASM module boundary. It does **not** enable third-party rule execution in the current release line.
+
 ## Configuration
 
 `steward init` creates `.steward.json`. Configuration is repository-owned so forks and teams can change policy without changing the engine.
@@ -179,9 +211,19 @@ steward scan --ci
   },
   "rules": {
     "disabled": []
+  },
+  "externalPacks": {
+    "requireSigned": true,
+    "allow": ["example.security-hygiene"],
+    "trustedPublishers": ["example-org"],
+    "trustedKeys": {
+      "ed25519:example-key-1": "-----BEGIN PUBLIC KEY-----..."
+    }
   }
 }
 ```
+
+The external-pack policy is **opt-in**. A malformed trust policy fails closed for `steward pack verify`. The current engine does not load arbitrary executable third-party rule packs during repository scans.
 
 Disable a complete built-in pack:
 
@@ -202,8 +244,6 @@ Disable individual rules when finer control is required:
   }
 }
 ```
-
-Pack-level policy is evaluated first, then individual rule-level policy. Steward does not currently load arbitrary executable third-party rule packs from configuration.
 
 ## GitHub Action
 
@@ -237,6 +277,31 @@ Custom arguments are passed as a JSON array to avoid shell re-parsing:
 
 During development, pin the Action to a reviewed branch or release tag instead of a moving development reference.
 
+## Trusted external rule packs
+
+External packs are not part of Steward's built-in scan path. They must first pass the versioned trust contract in [`schemas/steward-rule-pack-manifest.schema.json`](schemas/steward-rule-pack-manifest.schema.json) and the repository policy described in [`schemas/steward-external-pack-policy.schema.json`](schemas/steward-external-pack-policy.schema.json).
+
+Trust verification requires:
+
+```text
+manifest schema
++ exact rule API compatibility
++ exact result schema compatibility
++ allowlisted pack identity
++ trusted publisher
++ SHA-256 artifact match
++ Ed25519 signature verification
++ valid WASM artifact
++ capability declaration
++ bounded execution metadata
+```
+
+The sandbox prototype additionally rejects WASM modules with imports and performs a bounded worker-based instantiation probe. The probe is intentionally not a permission to execute third-party rules in the release scanner yet. Memory accounting for arbitrary defined WASM linear memory and the full rule host API remain future work.
+
+Arbitrary JavaScript or Node.js rule packages are not a supported trust mechanism.
+
+See [`docs/trusted-rule-packs.md`](docs/trusted-rule-packs.md) for the complete security model.
+
 ## Distribution verification
 
 Before a release, Steward can verify the actual npm package consumers receive:
@@ -254,6 +319,8 @@ The distribution workflow runs this verification remotely on every push and pull
 Steward follows one rule: **observe first, explain second, modify only when the requested fix is deterministic and explicitly enabled**.
 
 `fix` always refuses to modify files without `--safe`. `--dry-run` never writes. Security findings are observation-only. The current safe fixer only normalizes formatting-level hygiene findings.
+
+External packs add a separate trust boundary: **verification first, execution last**. A pack that fails identity, compatibility, integrity, signature, policy, or sandbox checks is rejected before execution. External packs cannot invoke Steward remediation.
 
 ## Integration with the gODtECH ecosystem
 
@@ -278,8 +345,9 @@ Steward remains independently usable. It is a focused maintenance engine, not an
 - **StackPilot** may optionally consume generic Steward findings while keeping its own golden-path checks separate.
 - Neither integration is required for Steward's standalone operation.
 - Generic maintenance rules have one canonical implementation in Steward.
+- External rule packs remain Steward-owned and must use the versioned trust boundary rather than private FORGE or StackPilot APIs.
 
-The stable scan result is versioned as `schemaVersion: 1`. The dedicated FORGE evidence artifact is separately versioned as `schemaVersion: 1` and explicitly identifies itself as observed `repository-health` evidence rather than a benchmark result. See [`docs/integration.md`](docs/integration.md), [`docs/deltas.md`](docs/deltas.md), and [`schemas/steward-result.schema.json`](schemas/steward-result.schema.json).
+The stable scan result is versioned as `schemaVersion: 1`. The dedicated FORGE evidence artifact is separately versioned as `schemaVersion: 1` and explicitly identifies itself as observed `repository-health` evidence rather than a benchmark result. See [`docs/integration.md`](docs/integration.md), [`docs/deltas.md`](docs/deltas.md), [`schemas/steward-result.schema.json`](schemas/steward-result.schema.json), and [`schemas/steward-rule-pack-manifest.schema.json`](schemas/steward-rule-pack-manifest.schema.json).
 
 ## Architecture
 
@@ -316,9 +384,12 @@ The stable scan result is versioned as `schemaVersion: 1`. The dedicated FORGE e
                             |
                             v
                      optional delta
+
+External pack verification is a separate opt-in path:
+manifest -> policy -> digest -> signature -> WASM boundary -> sandbox probe
 ```
 
-See [`docs/architecture.md`](docs/architecture.md), [`docs/rules.md`](docs/rules.md), [`docs/deltas.md`](docs/deltas.md), [`docs/integration.md`](docs/integration.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
+See [`docs/architecture.md`](docs/architecture.md), [`docs/rules.md`](docs/rules.md), [`docs/deltas.md`](docs/deltas.md), [`docs/integration.md`](docs/integration.md), [`docs/trusted-rule-packs.md`](docs/trusted-rule-packs.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Development
 
@@ -336,4 +407,4 @@ npm run verify:package
 
 **Active development / evidence-aware maintenance**
 
-The deterministic engine, CLI, reporting contract, reproducible installation path, configuration validation, versioned rule packs, stable finding fingerprints, before/after deltas, broader repository-health checks, consumer-style package verification, Forge evidence adapter, conservative remediation model, and GitHub Action integration are established. Future work can add trusted external rule-pack distribution, StackPilot adapters, language-aware analysis, dependency graphs, richer health evidence, and release-grade artifact provenance without replacing the core pipeline.
+The deterministic engine, CLI, reporting contract, reproducible installation path, configuration validation, versioned rule packs, stable finding fingerprints, before/after deltas, broader repository-health checks, consumer-style package verification, Forge evidence adapter, StackPilot report adapter boundary, conservative remediation model, and GitHub Action integration are established. Trusted external pack verification and a conservative WASM sandbox probe are now prototyped; external executable rule execution remains disabled until the full host API, resource accounting, provenance, audit, and malicious-pack test suite are release-ready.
