@@ -1,4 +1,19 @@
-const GENERATED_PATTERNS = [/^coverage\//, /^\.next\//, /(^|\/)npm-debug\.log(?:\.\d+)?$/, /(^|\/)yarn-debug\.log$/, /(^|\/)yarn-error\.log$/, /(^|\/)\.DS_Store$/, /(^|\/)Thumbs\.db$/];
+const GENERATED_PATTERNS = [
+  /^coverage\//,
+  /^\.next\//,
+  /^\.nyc_output\//,
+  /^\.turbo\//,
+  /^\.vite\//,
+  /^playwright-report\//,
+  /^test-results\//,
+  /(^|\/)npm-debug\.log(?:\.\d+)?$/,
+  /(^|\/)yarn-debug\.log$/,
+  /(^|\/)yarn-error\.log$/,
+  /(^|\/)\.DS_Store$/,
+  /(^|\/)Thumbs\.db$/,
+  /(^|\/)[^/]+\.tsbuildinfo$/,
+  /(^|\/)\.eslintcache$/
+];
 function hasFile(context, path) { const expected = path.toLowerCase(); return context.files.some((file) => file.relPath.toLowerCase() === expected) || [...context.trackedFiles].some((tracked) => tracked.toLowerCase() === expected); }
 function trackedGeneratedFiles(context) { return [...context.trackedFiles].filter((path) => GENERATED_PATTERNS.some((pattern) => pattern.test(path))).sort(); }
 function requiredGitignorePatterns(context) { const patterns = [".env", ".env.*"]; if (hasFile(context, "package.json")) patterns.push("node_modules/"); return patterns; }
