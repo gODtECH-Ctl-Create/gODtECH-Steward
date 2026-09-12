@@ -24,7 +24,11 @@
     "test": "npm run build && node dist/test/runner.js",
     "verify": "npm run check && npm test",
     "verify:package": "npm run check && node scripts/verify-package.mjs",
+    "verify:release": "npm run check && node scripts/verify-release.mjs",
     "prepack": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": [
     "repository",
