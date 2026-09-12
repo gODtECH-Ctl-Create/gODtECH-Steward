@@ -56,7 +56,7 @@ try {
   assert(!normalised.some((entry) => entry.startsWith("src/")), "Published package unexpectedly contains TypeScript source files.");
   assert(!normalised.some((entry) => entry.startsWith("node_modules/")), "Published package unexpectedly contains node_modules.");
 
-  run("npm", ["install", "--no-package-lock", "--ignore-scripts", tarball], { cwd: install });
+  run("npm", ["install", "--offline", "--no-package-lock", "--ignore-scripts", tarball], { cwd: install });
   const packageRoot = join(install, "node_modules", "@godtech", "steward");
   const cli = join(packageRoot, "dist", "src", "cli.js");
   const stewardBin = join(install, "node_modules", ".bin", "steward");
