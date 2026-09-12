@@ -22,6 +22,7 @@ Rule registry
     +--> security
     +--> documentation
     +--> dependencies
+    +--> maintenance
     +--> hygiene
     |
     v
