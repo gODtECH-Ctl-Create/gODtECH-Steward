@@ -25,24 +25,40 @@ export const documentationRule: StewardRule = {
       while ((match = MARKDOWN_LINK.exec(file.content)) !== null) {
         const rawTarget = match[1];
         if (!rawTarget || isSkippable(rawTarget)) continue;
-        const target = decodeURIComponent(stripFragment(rawTarget));
-        if (!target || target.startsWith("/")) continue;
-        const resolved = resolve(context.root, file.relPath, "..");
-        const absolute = resolve(resolved, target);
-        if (existsSync(absolute)) continue;
-        const line = file.content.slice(0, match.index).split(/\r?\n/).length;
-        findings.push({
-          id: `documentation.broken-link.${file.relPath}:${line}:${target}`,
-          rule: "broken-markdown-link",
-          category: "documentation",
-          severity: "low",
-          message: `Local Markdown link does not resolve: ${target}`,
-          path: file.relPath,
-          line,
-          fixable: false,
-          confidence: "high",
-          remediation: "Update the link to an existing repository path or remove the stale reference."
-        });
+        try {
+          const target = decodeURIComponent(stripFragment(rawTarget));
+          if (!target || target.startsWith("/")) continue;
+          const base = resolve(context.root, file.relPath, "..");
+          const absolute = resolve(base, target);
+          if (existsSync(absolute)) continue;
+          const line = file.content.slice(0, match.index).split(/\r?\n/).length;
+          findings.push({
+            id: `documentation.broken-link.${file.relPath}:${line}:${target}`,
+            rule: "broken-markdown-link",
+            category: "documentation",
+            severity: "low",
+            message: `Local Markdown link does not resolve: ${target}`,
+            path: file.relPath,
+            line,
+            fixable: false,
+            confidence: "high",
+            remediation: "Update the link to an existing repository path or remove the stale reference."
+          });
+        } catch {
+          const line = file.content.slice(0, match.index).split(/\r?\n/).length;
+          findings.push({
+            id: `documentation.malformed-link.${file.relPath}:${line}`,
+            rule: "malformed-markdown-link",
+            category: "documentation",
+            severity: "low",
+            message: "Malformed URI in a local Markdown link.",
+            path: file.relPath,
+            line,
+            fixable: false,
+            confidence: "high",
+            remediation: "Encode the link target as a valid URI."
+          });
+        }
       }
     }
     return findings;
