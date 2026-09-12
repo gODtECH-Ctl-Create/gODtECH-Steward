@@ -3,7 +3,7 @@ import { relative, resolve, sep } from "node:path";
 import { collectFiles, normalisePath } from "./files.js";
 import { loadConfig } from "./config.js";
 import { gitFacts } from "./git.js";
-import { enabledRules } from "./rules.js";
+import { enabledPackSummaries, enabledRules } from "./rules.js";
 import { scoreFindings } from "./score.js";
 import type { Category, Finding, ScanContext, ScanResult } from "./types.js";
 
@@ -58,11 +58,12 @@ export async function scanRepository(inputRoot: string): Promise<ScanResult> {
   const files = await collectFiles(root, config);
   const scopedTracked = scopedTrackedFiles(root, git.root, git.trackedFiles);
   const context: ScanContext = { root, config, files, trackedFiles: scopedTracked, git: { ...git, trackedFiles: scopedTracked } };
+  const enabledPacks = enabledPackSummaries(config.packs.disabled);
   const findings: Finding[] = [];
 
   if (loaded.warning) findings.push(configFinding(loaded.warning));
 
-  for (const rule of enabledRules(config.rules.disabled)) {
+  for (const rule of enabledRules(config.rules.disabled, config.packs.disabled)) {
     try {
       findings.push(...rule.run(context));
     } catch (error) {
@@ -96,6 +97,7 @@ export async function scanRepository(inputRoot: string): Promise<ScanResult> {
     durationMs: Math.max(0, Math.round(performance.now() - start)),
     git: context.git,
     categoryCounts: categoryCounts(findings),
-    ruleCounts: ruleCounts(findings)
+    ruleCounts: ruleCounts(findings),
+    rulePacks: enabledPacks,
   };
 }
