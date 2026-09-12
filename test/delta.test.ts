@@ -5,7 +5,7 @@ import { toJson } from "../src/core/report.js";
 import type { Finding, ScanResult } from "../src/core/types.js";
 
 function finding(overrides: Partial<Finding> = {}): Finding {
-  return {
+  const item: Finding = {
     id: "maintenance.todo-markers.src/app.ts",
     rule: "todo-fixme",
     category: "code",
@@ -17,6 +17,7 @@ function finding(overrides: Partial<Finding> = {}): Finding {
     confidence: "high",
     ...overrides,
   };
+  return { ...item, fingerprint: findingFingerprint(item) };
 }
 
 function result(healthScore: number, findings: Finding[]): ScanResult {
