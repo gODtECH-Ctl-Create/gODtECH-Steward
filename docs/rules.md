@@ -30,10 +30,12 @@ Current packs:
 
 | Pack | Version | Purpose |
 | --- | ---: | --- |
-| `core` | 1 | Repository, documentation, dependency, maintenance, and hygiene checks |
+| `core` | 2 | Repository, documentation, dependency, maintenance, metadata, and hygiene checks |
 | `security` | 1 | High-confidence credential and security-pattern checks |
 
-Disable a complete pack in `.steward.json`:
+The `core` pack was bumped to version 2 because its rule inventory changed with project metadata checks and expanded generated-artifact detection.
+
+Disable a complete built-in pack in `.steward.json`:
 
 ```json
 {
@@ -57,6 +59,12 @@ Pack disabling is applied before individual rule disabling. Duplicate rule IDs a
 
 Use `steward rules` to inspect the active built-in packs and rule states.
 
+## Current deterministic coverage
+
+The core pack includes package metadata checks for `package.json` projects. Missing name is treated as a medium-severity identity gap; missing description, version, or license are low-severity completeness gaps, with version and license checks skipped for explicitly private packages.
+
+Repository artifact detection includes strong generated signals such as coverage reports, Playwright reports, test-result directories, build-tool caches, TypeScript build-info files, and common local debug artifacts. The rule does not assume that directories such as `dist/` or `build/` are disposable because some packages intentionally ship compiled output.
+
 ## Rules must not
 
 - delete uncertain files;
@@ -69,7 +77,7 @@ Use `steward rules` to inspect the active built-in packs and rule states.
 
 1. Create a module under `src/rules/`.
 2. Export a `StewardRule` implementation.
-3. Add it to the appropriate pack in `src/core/rule-packs.ts`.
+3. Add it to the appropriate pack in `src/core/rule-packs.ts` and bump that pack's version when its inventory changes.
 4. Add focused tests under `test/`.
 5. Run type checking, build, tests, and a CLI smoke test.
 6. Update the README and `.forge/state.md` when product behavior changes.
