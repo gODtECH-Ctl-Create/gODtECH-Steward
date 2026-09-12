@@ -21,7 +21,7 @@ test("default scan enables the core and security rule packs", async () => {
   await writeFile(join(root, "config.ts"), `const token = '${token}';\n`, "utf8");
   const result = await scanRepository(root);
   assert.deepEqual(result.rulePacks, [
-    { id: "core", version: 1 },
+    { id: "core", version: 2 },
     { id: "security", version: 1 },
   ]);
   assert.equal(result.findings.some((finding) => finding.rule === "possible-secret"), true);
@@ -34,7 +34,7 @@ test("disabling the security pack removes security findings without disabling co
   const token = ["ghp_", "123456789012345678901234567890"].join("");
   await writeFile(join(root, "config.ts"), `const token = '${token}';\n// TODO: keep this visible\n`, "utf8");
   const result = await scanRepository(root);
-  assert.deepEqual(result.rulePacks, [{ id: "core", version: 1 }]);
+  assert.deepEqual(result.rulePacks, [{ id: "core", version: 2 }]);
   assert.equal(result.findings.some((finding) => finding.category === "security"), false);
   assert.equal(result.findings.some((finding) => finding.rule === "todo-fixme"), true);
 });
