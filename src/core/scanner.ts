@@ -7,6 +7,8 @@ import { enabledRules } from "./rules.js";
 import { scoreFindings } from "./score.js";
 import type { Category, Finding, ScanContext, ScanResult } from "./types.js";
 
+const SEVERITY_ORDER = new Map([["critical", 0], ["high", 1], ["medium", 2], ["low", 3], ["info", 4]]);
+
 function categoryCounts(findings: readonly Finding[]): Partial<Record<Category, number>> {
   return findings.reduce<Partial<Record<Category, number>>>((counts, finding) => {
     counts[finding.category] = (counts[finding.category] ?? 0) + 1;
@@ -66,7 +68,7 @@ export async function scanRepository(inputRoot: string): Promise<ScanResult> {
   }
 
   findings.sort((a, b) =>
-    (a.severity.localeCompare(b.severity)) ||
+    (SEVERITY_ORDER.get(a.severity) ?? 99) - (SEVERITY_ORDER.get(b.severity) ?? 99) ||
     (a.path ?? "").localeCompare(b.path ?? "") ||
     a.id.localeCompare(b.id)
   );
