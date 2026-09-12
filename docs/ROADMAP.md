@@ -51,9 +51,19 @@ security@1
   security
 ```
 
-`core` was bumped from version 1 to version 2 because the pack gained a new metadata rule and expanded deterministic generated-artifact signals.
+The `core` pack was bumped from version 1 to version 2 because the rule inventory changed. Consumers can therefore distinguish the expanded deterministic health baseline from the previous pack behavior.
 
-A generic housekeeping capability belongs here rather than being copied into Forge or StackPilot.
+## Deterministic health expansion
+
+The current core expansion focuses on evidence with low speculation:
+
+- package project identity and description checks;
+- version/license completeness for non-private packages;
+- tracked coverage and test-report artifacts;
+- tracked test/tool output directories;
+- common local build caches, TypeScript build-info files, and lint caches.
+
+Steward deliberately does not treat generic `dist/` or `build/` directories as disposable because some projects intentionally ship compiled output.
 
 ## Scan evidence and deltas
 
