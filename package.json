@@ -9,6 +9,7 @@
   },
   "files": [
     "dist/src",
+    "schemas",
     "action.yml",
     "action-runner.cjs",
     "README.md",
