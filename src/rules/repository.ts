@@ -3,11 +3,18 @@ import type { Finding, ScanContext, StewardRule } from "../core/types.js";
 const GENERATED_PATTERNS = [
   /^coverage\//,
   /^\.next\//,
+  /^\.nyc_output\//,
+  /^\.turbo\//,
+  /^\.vite\//,
+  /^playwright-report\//,
+  /^test-results\//,
   /(^|\/)npm-debug\.log(?:\.\d+)?$/,
   /(^|\/)yarn-debug\.log$/,
   /(^|\/)yarn-error\.log$/,
   /(^|\/)\.DS_Store$/,
-  /(^|\/)Thumbs\.db$/
+  /(^|\/)Thumbs\.db$/,
+  /(^|\/)[^/]+\.tsbuildinfo$/,
+  /(^|\/)\.eslintcache$/
 ];
 
 function hasFile(context: ScanContext, path: string): boolean {
