@@ -56,6 +56,10 @@ function assertManifest(condition: unknown, message: string): asserts condition 
   if (!condition) throw new Error(`Invalid rule-pack manifest: ${message}`);
 }
 
+function isBoundedInteger(value: unknown, min: number, max: number): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= min && value <= max;
+}
+
 export function parseRulePackManifest(raw: unknown): RulePackManifest {
   assertManifest(isRecord(raw), "expected a JSON object");
   assertManifest(raw.schemaVersion === STEWARD_MANIFEST_SCHEMA_VERSION, "unsupported schemaVersion");
@@ -77,16 +81,16 @@ export function parseRulePackManifest(raw: unknown): RulePackManifest {
   const artifact = raw.artifact;
   assertManifest(artifact.format === "wasm", "artifact.format must be wasm");
   assertManifest(typeof artifact.sha256 === "string" && /^[A-Fa-f0-9]{64}$/.test(artifact.sha256), "invalid artifact.sha256");
-  assertManifest(typeof artifact.sizeBytes === "number" && Number.isSafeInteger(artifact.sizeBytes) && artifact.sizeBytes > 0 && artifact.sizeBytes <= 100 * 1024 * 1024, "invalid artifact.sizeBytes");
+  assertManifest(isBoundedInteger(artifact.sizeBytes, 1, 100 * 1024 * 1024), "invalid artifact.sizeBytes");
   assertManifest(typeof artifact.uri === "string" && artifact.uri.length > 0 && artifact.uri.length <= 2048, "invalid artifact.uri");
 
   assertManifest(Array.isArray(raw.capabilities) && raw.capabilities.length >= 1 && raw.capabilities.every((value) => value === "repository.read"), "capabilities must contain only repository.read");
 
   assertManifest(isRecord(raw.limits), "limits must be an object");
   const limits = raw.limits;
-  assertManifest(Number.isSafeInteger(limits.maxExecutionMs) && limits.maxExecutionMs >= 1 && limits.maxExecutionMs <= 10_000, "invalid limits.maxExecutionMs");
-  assertManifest(Number.isSafeInteger(limits.maxMemoryMiB) && limits.maxMemoryMiB >= 8 && limits.maxMemoryMiB <= 256, "invalid limits.maxMemoryMiB");
-  assertManifest(Number.isSafeInteger(limits.maxFindings) && limits.maxFindings >= 1 && limits.maxFindings <= 5_000, "invalid limits.maxFindings");
+  assertManifest(isBoundedInteger(limits.maxExecutionMs, 1, 10_000), "invalid limits.maxExecutionMs");
+  assertManifest(isBoundedInteger(limits.maxMemoryMiB, 8, 256), "invalid limits.maxMemoryMiB");
+  assertManifest(isBoundedInteger(limits.maxFindings, 1, 5_000), "invalid limits.maxFindings");
 
   assertManifest(isRecord(raw.signature), "signature must be an object");
   const signature = raw.signature;
