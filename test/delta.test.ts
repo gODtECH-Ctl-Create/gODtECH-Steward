@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { calculateScanDelta, findingFingerprint } from "../src/core/delta.js";
+import { toJson } from "../src/core/report.js";
 import type { Finding, ScanResult } from "../src/core/types.js";
 
 function finding(overrides: Partial<Finding> = {}): Finding {
@@ -57,4 +58,16 @@ test("scan delta reports added and resolved findings deterministically", () => {
   assert.equal(delta.severityCounts.medium.delta, 1);
   assert.equal(delta.categoryCounts.security?.delta, -1);
   assert.equal(delta.categoryCounts.repository?.delta, 1);
+});
+
+test("JSON reports include fingerprints and optional deltas", () => {
+  const current = result(88, [finding({ id: "repository.large-file.assets.bin", rule: "large-file", category: "repository", severity: "medium", message: "Large file detected.", path: "assets.bin" })]);
+  const previous = result(72, [finding({ id: "security.possible-secret.config.ts", rule: "possible-secret", category: "security", severity: "high", message: "Possible credential pattern detected.", path: "config.ts" })]);
+  const delta = calculateScanDelta(previous, current);
+  const payload = JSON.parse(toJson(current, delta)) as { findings: Finding[]; delta: typeof delta };
+
+  assert.match(payload.findings[0]?.fingerprint ?? "", /^[a-f0-9]{64}$/);
+  assert.equal(payload.delta.health.direction, "improved");
+  assert.equal(payload.delta.findings.added, 1);
+  assert.equal(payload.delta.findings.resolved, 1);
 });
