@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "exclude": [],
+  "maxFileSizeBytes": 10485760,
+  "largeFileThresholdBytes": 5242880,
+  "ci": {
+    "failOn": "critical"
+  },
+  "packs": {
+    "disabled": []
+  },
+  "rules": {
+    "disabled": []
+  }
+}

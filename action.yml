@@ -1,0 +1,20 @@
+name: gODtECH Steward
+description: Deterministic software and repository housekeeping
+inputs:
+  path:
+    description: Repository path to scan
+    required: false
+    default: .
+  args:
+    description: JSON array of Steward arguments, for example ["scan", "--ci"]
+    required: false
+    default: '["scan", "--ci"]'
+runs:
+  using: composite
+  steps:
+    - name: Run Steward
+      shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_ARGS: ${{ inputs.args }}
+      run: node "${{ github.action_path }}/action-runner.cjs"

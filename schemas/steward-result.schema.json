@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/blob/main/schemas/steward-result.schema.json",
+  "title": "gODtECH Steward Scan Result",
+  "description": "Versioned machine-readable result emitted by gODtECH Steward.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "tool",
+    "version",
+    "root",
+    "scannedFiles",
+    "textFiles",
+    "findings",
+    "healthScore",
+    "durationMs",
+    "git",
+    "categoryCounts",
+    "ruleCounts"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "tool": { "const": "gODtECH Steward" },
+    "version": { "const": 1 },
+    "root": { "type": "string", "minLength": 1 },
+    "scannedFiles": { "type": "integer", "minimum": 0 },
+    "textFiles": { "type": "integer", "minimum": 0 },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "healthScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "durationMs": { "type": "integer", "minimum": 0 },
+    "git": { "$ref": "#/$defs/git" },
+    "categoryCounts": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "ruleCounts": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "rulePacks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/rulePack" },
+      "uniqueItems": true
+    },
+    "delta": { "$ref": "#/$defs/scanDelta" }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule",
+        "category",
+        "severity",
+        "message",
+        "fixable",
+        "confidence"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "rule": { "type": "string", "minLength": 1 },
+        "category": {
+          "enum": ["repository", "security", "documentation", "code", "dependencies", "git", "configuration"]
+        },
+        "severity": { "enum": ["critical", "high", "medium", "low", "info"] },
+        "message": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "fixable": { "type": "boolean" },
+        "confidence": { "enum": ["high", "medium", "low"] },
+        "details": { "type": "string" },
+        "remediation": { "type": "string" },
+        "fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "rulePack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "findingFingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fingerprint", "id", "rule"],
+      "properties": {
+        "fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "id": { "type": "string", "minLength": 1 },
+        "rule": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "countDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["previous", "current", "delta"],
+      "properties": {
+        "previous": { "type": "integer", "minimum": 0 },
+        "current": { "type": "integer", "minimum": 0 },
+        "delta": { "type": "integer" }
+      }
+    },
+    "scanDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["health", "findings", "severityCounts", "categoryCounts"],
+      "properties": {
+        "health": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["previous", "current", "delta", "direction"],
+          "properties": {
+            "previous": { "type": "integer", "minimum": 0 },
+            "current": { "type": "integer", "minimum": 0 },
+            "delta": { "type": "integer" },
+            "direction": { "enum": ["improved", "regressed", "unchanged"] }
+          }
+        },
+        "findings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["previous", "current", "added", "resolved", "unchanged", "addedItems", "resolvedItems"],
+          "properties": {
+            "previous": { "type": "integer", "minimum": 0 },
+            "current": { "type": "integer", "minimum": 0 },
+            "added": { "type": "integer", "minimum": 0 },
+            "resolved": { "type": "integer", "minimum": 0 },
+            "unchanged": { "type": "integer", "minimum": 0 },
+            "addedItems": { "type": "array", "items": { "$ref": "#/$defs/findingFingerprint" } },
+            "resolvedItems": { "type": "array", "items": { "$ref": "#/$defs/findingFingerprint" } }
+          }
+        },
+        "severityCounts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["critical", "high", "medium", "low", "info"],
+          "properties": {
+            "critical": { "$ref": "#/$defs/countDelta" },
+            "high": { "$ref": "#/$defs/countDelta" },
+            "medium": { "$ref": "#/$defs/countDelta" },
+            "low": { "$ref": "#/$defs/countDelta" },
+            "info": { "$ref": "#/$defs/countDelta" }
+          }
+        },
+        "categoryCounts": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/countDelta" }
+        }
+      }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["isRepository"],
+      "properties": {
+        "isRepository": { "type": "boolean" },
+        "root": { "type": "string", "minLength": 1 },
+        "branch": { "type": "string", "minLength": 1 },
+        "commit": { "type": "string", "minLength": 1 },
+        "dirty": { "type": "boolean" }
+      }
+    }
+  }
+}

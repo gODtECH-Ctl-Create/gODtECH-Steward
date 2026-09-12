@@ -1,0 +1,61 @@
+import type { Finding, ScanContext, StewardRule } from "../core/types.js";
+
+const SOURCE_EXTENSIONS = new Set([
+  ".c", ".cc", ".cpp", ".cs", ".css", ".cue", ".go", ".h", ".hpp", ".html", ".java",
+  ".js", ".jsx", ".kt", ".mjs", ".php", ".py", ".rb", ".rs", ".sh", ".sql", ".swift",
+  ".ts", ".tsx", ".vue", ".xml", ".yaml", ".yml", ".json", ".toml"
+]);
+
+function extension(path: string): string {
+  const index = path.lastIndexOf(".");
+  return index >= 0 ? path.slice(index).toLowerCase() : "";
+}
+
+export const maintenanceRule: StewardRule = {
+  id: "maintenance",
+  category: "code",
+  description: "Detects unresolved merge markers and explicit TODO/FIXME maintenance markers.",
+  run(context: ScanContext): Finding[] {
+    const findings: Finding[] = [];
+    for (const file of context.files) {
+      if (!file.isText || file.content === undefined || !SOURCE_EXTENSIONS.has(extension(file.relPath))) continue;
+
+      const conflictMatch = /^(<{7}|={7}|>{7})/m.exec(file.content);
+      if (conflictMatch) {
+        const line = file.content.slice(0, conflictMatch.index).split(/\r?\n/).length;
+        findings.push({
+          id: `maintenance.merge-conflict.${file.relPath}`,
+          rule: "merge-conflict-marker",
+          category: "code",
+          severity: "high",
+          message: "Unresolved merge-conflict marker detected.",
+          path: file.relPath,
+          line,
+          fixable: false,
+          confidence: "high",
+          remediation: "Resolve the conflict manually and remove all conflict markers before merging."
+        });
+      }
+
+      const markers = [...file.content.matchAll(/\b(?:TODO|FIXME)\b/gi)].length;
+      if (markers > 0) {
+        const first = /\b(?:TODO|FIXME)\b/i.exec(file.content);
+        const line = first ? file.content.slice(0, first.index).split(/\r?\n/).length : undefined;
+        findings.push({
+          id: `maintenance.todo-markers.${file.relPath}`,
+          rule: "todo-fixme",
+          category: "code",
+          severity: "low",
+          message: `${markers} TODO/FIXME maintenance marker(s) found.`,
+          path: file.relPath,
+          line,
+          fixable: false,
+          confidence: "high",
+          details: "A marker is not necessarily a defect; review it as part of project maintenance.",
+          remediation: "Resolve, document, or track the work represented by the marker."
+        });
+      }
+    }
+    return findings;
+  }
+};
