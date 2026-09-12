@@ -1,3 +1,5 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -5,8 +7,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { scanRepository } from "../src/core/scanner.js";
 
+const execFileAsync = promisify(execFile);
+
 async function fixture(): Promise<string> {
   return mkdtemp(join(tmpdir(), "steward-metadata-"));
+}
+
+async function gitInit(root: string): Promise<void> {
+  await execFileAsync("git", ["init", "--quiet", root]);
 }
 
 test("project metadata rule reports missing package identity and description", async () => {
@@ -33,16 +41,18 @@ test("private packages are not required to declare a publishable version or lice
   assert.equal(result.findings.some((finding) => finding.id === "metadata.package-license-missing"), false);
 });
 
-test("generated test artifacts are flagged when tracked by Git", async () => {
+test("tracked generated test artifacts are reported", async () => {
   const root = await fixture();
+  await gitInit(root);
   await mkdir(join(root, "playwright-report"));
   await writeFile(join(root, "README.md"), "# Example\n", "utf8");
   await writeFile(join(root, ".gitignore"), ".env\n.env.*\nnode_modules/\n", "utf8");
   await writeFile(join(root, "playwright-report", "index.html"), "<html></html>\n", "utf8");
-  await writeFile(join(root, "build.ts"), "console.log('artifact')\n", "utf8");
+  await execFileAsync("git", ["-C", root, "add", "."]);
 
   const result = await scanRepository(root);
   const artifact = result.findings.find((finding) => finding.rule === "tracked-generated-output");
 
-  assert.equal(artifact, undefined);
+  assert.ok(artifact);
+  assert.equal(artifact?.path, "playwright-report/index.html");
 });
