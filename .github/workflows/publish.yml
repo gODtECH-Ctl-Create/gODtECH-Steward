@@ -24,6 +24,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify annotated release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git cat-file -t "refs/tags/${GITHUB_REF_NAME}")" = "tag"
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
