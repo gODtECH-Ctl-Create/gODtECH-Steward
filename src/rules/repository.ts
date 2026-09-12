@@ -1,29 +1,108 @@
-import type { FileEntry, Finding, ScanConfig } from "../core/types.js";
+import type { Finding, ScanContext, StewardRule } from "../core/types.js";
 
-export function repositoryFindings(files: FileEntry[], config: ScanConfig): Finding[] {
-  const findings: Finding[] = [];
-  const paths = new Set(files.map((file) => file.relPath.toLowerCase()));
+const GENERATED_PATTERNS = [
+  /^dist\//,
+  /^build\//,
+  /^coverage\//,
+  /^\.next\//,
+  /(^|\/)npm-debug\.log(?:\.\d+)?$/,
+  /(^|\/)yarn-debug\.log$/,
+  /(^|\/)yarn-error\.log$/,
+  /(^|\/)\.DS_Store$/,
+  /(^|\/)Thumbs\.db$/
+];
 
-  if (!paths.has("readme.md") && !paths.has("readme")) {
-    findings.push({ id: "repository.readme.missing", rule: "repository-readme", category: "repository", severity: "medium", message: "Repository has no README file.", fixable: false });
-  }
+function hasFile(context: ScanContext, path: string): boolean {
+  return context.files.some((file) => file.relPath === path) || context.trackedFiles.has(path);
+}
 
-  if (!paths.has(".gitignore")) {
-    findings.push({ id: "repository.gitignore.missing", rule: "repository-gitignore", category: "repository", severity: "low", message: "Repository has no .gitignore file.", fixable: false });
-  }
+function trackedGeneratedFiles(context: ScanContext): string[] {
+  return [...context.trackedFiles].filter((path) => GENERATED_PATTERNS.some((pattern) => pattern.test(path))).sort();
+}
 
-  for (const file of files) {
-    if (file.size >= config.largeFileThresholdBytes) {
+function gitignoreNeeds(content: string | undefined, patterns: string[]): string[] {
+  if (!content) return patterns;
+  const lines = new Set(content.split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
+  return patterns.filter((pattern) => !lines.has(pattern));
+}
+
+export const repositoryRule: StewardRule = {
+  id: "repository",
+  category: "repository",
+  description: "Checks core repository structure, tracked artifacts, and Git ignore hygiene.",
+  run(context): Finding[] {
+    const findings: Finding[] = [];
+    if (!hasFile(context, "README.md") && !hasFile(context, "README")) {
       findings.push({
-        id: "repository.large-file",
-        rule: "repository-large-file",
+        id: "repository.missing-readme",
+        rule: "missing-readme",
         category: "repository",
         severity: "medium",
-        message: `Large file detected (${Math.ceil(file.size / 1024 / 1024)} MiB).`,
-        path: file.relPath,
-        fixable: false
+        message: "No README file was found at the repository root.",
+        fixable: false,
+        confidence: "high",
+        remediation: "Add a root README that explains the project and its supported workflow."
       });
     }
+
+    const gitignore = context.files.find((file) => file.relPath === ".gitignore");
+    if (!gitignore) {
+      findings.push({
+        id: "repository.missing-gitignore",
+        rule: "missing-gitignore",
+        category: "repository",
+        severity: context.git.isRepository ? "medium" : "low",
+        message: "No .gitignore file was found.",
+        fixable: false,
+        confidence: "high",
+        remediation: "Add a .gitignore appropriate to the project's languages and tooling."
+      });
+    } else if (gitignore.content) {
+      const missing = gitignoreNeeds(gitignore.content, [".env", ".env.*", "node_modules/"]);
+      for (const pattern of missing) {
+        findings.push({
+          id: `repository.gitignore-missing.${pattern.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}`,
+          rule: "gitignore-baseline",
+          category: "repository",
+          severity: "low",
+          message: `.gitignore does not explicitly ignore ${pattern}.`,
+          path: ".gitignore",
+          fixable: false,
+          confidence: "medium",
+          remediation: `Consider adding ${pattern} if it is generated or contains local-only data.`
+        });
+      }
+    }
+
+    const large = context.files.filter((file) => file.size >= context.config.largeFileThresholdBytes).sort((a, b) => b.size - a.size);
+    for (const file of large) {
+      findings.push({
+        id: `repository.large-file.${file.relPath}`,
+        rule: "large-file",
+        category: "repository",
+        severity: "medium",
+        message: `Large file detected (${file.size.toLocaleString()} bytes).`,
+        path: file.relPath,
+        fixable: false,
+        confidence: "high",
+        remediation: "Review whether the file belongs in source control or should use an artifact/storage workflow."
+      });
+    }
+
+    for (const path of trackedGeneratedFiles(context)) {
+      findings.push({
+        id: `repository.tracked-generated.${path}`,
+        rule: "tracked-generated-output",
+        category: "repository",
+        severity: "medium",
+        message: "A commonly generated output or local artifact is tracked by Git.",
+        path,
+        fixable: false,
+        confidence: "high",
+        remediation: "Remove generated output from version control only after confirming the project does not intentionally commit it. Add the path to .gitignore where appropriate."
+      });
+    }
+
+    return findings;
   }
-  return findings;
-}
+};
