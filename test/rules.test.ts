@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -32,9 +32,9 @@ test("documentation rule detects broken local Markdown links", async () => {
 
 test("documentation rule accepts query and fragment components and skips external URI schemes", async () => {
   const root = await fixture();
+  await mkdir(join(root, "docs"));
   await writeFile(join(root, "README.md"), "# Example\n\n[Guide](docs/guide.md?raw=1#install) [SSH](ssh://git.example.com/repo) [FTP](ftp://example.com/file)\n", "utf8");
   await writeFile(join(root, ".gitignore"), ".env\n.env.*\nnode_modules/\n", "utf8");
-  await writeFile(join(root, "docs-guide.md"), "guide\n", "utf8");
   await writeFile(join(root, "docs", "guide.md"), "# Guide\n", "utf8");
   const result = await scanRepository(root);
   assert.equal(result.findings.some((finding) => finding.rule === "broken-markdown-link"), false);
