@@ -11,6 +11,12 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function runInstalledBin(binPath, args, cwd) {
+  const result = spawnSync(binPath, args, { cwd, encoding: "utf8" });
+  assert(result.status === 0, `Installed CLI failed: ${result.stderr}`);
+  return result.stdout.trim();
+}
+
 const workspace = mkdtempSync(join(tmpdir(), "godtech-steward-package-"));
 const fixture = join(workspace, "fixture");
 const install = join(workspace, "install");
@@ -53,13 +59,14 @@ try {
   run("npm", ["install", "--no-package-lock", "--ignore-scripts", tarball], { cwd: install });
   const packageRoot = join(install, "node_modules", "@godtech", "steward");
   const cli = join(packageRoot, "dist", "src", "cli.js");
+  const stewardBin = join(install, "node_modules", ".bin", "steward");
+  const godtechStewardBin = join(install, "node_modules", ".bin", "godtech-steward");
   const actionRunner = join(packageRoot, "action-runner.cjs");
 
-  const version = run(process.execPath, [cli, "--version"], { cwd: fixture }).trim();
+  const version = runInstalledBin(stewardBin, ["--version"], fixture);
   assert(version === "0.1.0", `Installed steward binary returned unexpected version: ${version}`);
-
-  const aliasVersion = run(process.execPath, [join(packageRoot, "dist", "src", "cli.js"), "-v"], { cwd: fixture }).trim();
-  assert(aliasVersion === version, "The godtech-steward binary target is not aligned with steward.");
+  const aliasVersion = runInstalledBin(godtechStewardBin, ["--version"], fixture);
+  assert(aliasVersion === version, "The godtech-steward alias does not resolve to the same version as steward.");
 
   const scanRaw = run(process.execPath, [cli, "scan", "--json", fixture], { cwd: fixture });
   const scan = JSON.parse(scanRaw);
