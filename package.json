@@ -1,0 +1,36 @@
+{
+  "name": "@godtech/steward",
+  "version": "0.1.0",
+  "description": "Deterministic software and repository housekeeping from gODtECH.",
+  "type": "module",
+  "bin": {
+    "steward": "dist/src/cli.js",
+    "gotek-steward": "dist/src/cli.js"
+  },
+  "files": [
+    "dist",
+    "action.yml"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit",
+    "test": "npm run build && node --test dist/test",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "repository",
+    "housekeeping",
+    "developer-tools",
+    "github-action",
+    "code-health",
+    "gODtECH"
+  ],
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  }
+}

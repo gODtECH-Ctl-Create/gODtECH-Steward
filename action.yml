@@ -1,0 +1,17 @@
+name: gODtECH Steward
+description: Deterministic software and repository housekeeping
+inputs:
+  path:
+    description: Repository path to scan
+    required: false
+    default: .
+  args:
+    description: Steward command and additional arguments
+    required: false
+    default: scan --ci
+runs:
+  using: composite
+  steps:
+    - name: Run Steward
+      shell: bash
+      run: node "${{ github.action_path }}/dist/src/cli.js" ${{ inputs.args }} "${{ inputs.path }}"
