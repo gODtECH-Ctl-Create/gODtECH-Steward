@@ -11,7 +11,8 @@ function countBySeverity(findings: readonly Finding[]): Record<Severity, number>
 }
 
 export function toJson(result: ScanResult): string {
-  return JSON.stringify(result, null, 2);
+  const { trackedFiles: _trackedFiles, ...gitReport } = result.git;
+  return JSON.stringify({ ...result, git: gitReport }, null, 2);
 }
 
 export function toText(result: ScanResult): string {
