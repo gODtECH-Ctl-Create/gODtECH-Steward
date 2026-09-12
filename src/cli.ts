@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readFile, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { collectFiles } from "./core/files.js";
 import { initConfig, loadConfig } from "./core/config.js";
@@ -12,6 +13,15 @@ import { applySafeFixes } from "./rules/hygiene.js";
 import { verifyRulePack } from "./core/trust.js";
 import { probeWasmSandbox } from "./core/wasm-sandbox.js";
 import type { Severity } from "./core/types.js";
+
+async function packageVersion(): Promise<string> {
+  const packagePath = fileURLToPath(new URL("../../package.json", import.meta.url));
+  const raw = JSON.parse(await readFile(packagePath, "utf8")) as unknown;
+  if (typeof raw !== "object" || raw === null || !("version" in raw) || typeof raw.version !== "string") {
+    throw new Error("Unable to determine gODtECH Steward package version.");
+  }
+  return raw.version;
+}
 
 function usage(): string {
   return `gODtECH Steward
@@ -128,7 +138,7 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0] ?? "help";
   if (command === "--version" || command === "-v") {
-    console.log("0.1.0");
+    console.log(await packageVersion());
     return;
   }
   if (command === "help" || command === "--help" || command === "-h") {

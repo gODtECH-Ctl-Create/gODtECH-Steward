@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readFile, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { collectFiles } from "./core/files.js";
 import { initConfig, loadConfig } from "./core/config.js";
@@ -11,6 +12,14 @@ import { hasCiFailure, formatSummary, toJson, toText } from "./core/report.js";
 import { applySafeFixes } from "./rules/hygiene.js";
 import { verifyRulePack } from "./core/trust.js";
 import { probeWasmSandbox } from "./core/wasm-sandbox.js";
+async function packageVersion() {
+  const packagePath = fileURLToPath(new URL("../../package.json", import.meta.url));
+  const raw = JSON.parse(await readFile(packagePath, "utf8"));
+  if (typeof raw !== "object" || raw === null || !("version" in raw) || typeof raw.version !== "string") {
+    throw new Error("Unable to determine gODtECH Steward package version.");
+  }
+  return raw.version;
+}
 function usage() {
   return `gODtECH Steward\n\nUsage:\n  steward init [path]\n  steward scan [path] [--json] [--ci]\n  steward doctor [path] [--json] [--ci]\n  steward report [path] --output <file> [--compare <report>]\n  steward forge-evidence [path] [--output <file>] [--compare <report>]\n  steward rules [path]\n  steward fix [path] --safe [--dry-run]\n  steward pack verify <manifest> --artifact <file> [--sandbox] [--json]\n  steward --version\n`;
 }
@@ -97,7 +106,7 @@ async function main() {
   const args = process.argv.slice(2);
   const command = args[0] ?? "help";
   if (command === "--version" || command === "-v") {
-    console.log("0.1.0");
+    console.log(await packageVersion());
     return;
   }
   if (command === "help" || command === "--help" || command === "-h") {
