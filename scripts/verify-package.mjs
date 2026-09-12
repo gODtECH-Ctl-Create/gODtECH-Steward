@@ -13,7 +13,7 @@ function assertVersion(value) {
 }
 
 function run(command, args, options = {}) {
-  return execFileSync(command, args, { stdio: "pipe", encoding: "utf8", ...options });
+  return execFileSync(command, args, { stdio: "pipe", encoding: "utf8", shell: process.platform === "win32", ...options });
 }
 
 function assert(condition, message) {
