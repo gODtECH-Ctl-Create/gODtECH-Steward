@@ -10,6 +10,7 @@
 - Consumer-style package verification for the npm archive and packaged GitHub Action.
 - `forge-evidence` command for observed repository-health evidence suitable for gODtECH FORGE workflow consumption.
 - Dedicated `steward-forge-evidence.schema.json` contract for the adapter artifact.
+- Trusted external rule-pack manifest schema and security design. This design does not enable executable external packs.
 
 ### Changed
 
@@ -17,6 +18,7 @@
 - Generated-output detection remains conservative and does not classify generic `dist/` or `build/` directories as disposable by default.
 - Distribution verification now installs the generated package tarball offline and exercises the shipped CLI, Action, and Forge evidence artifacts.
 - FORGE integration is explicitly separated from FORGE benchmark result generation; Steward does not fabricate benchmark or provider-telemetry fields.
+- External rule-pack execution remains disabled pending trust verification, sandboxing, compatibility enforcement, and audit controls.
 
 ## 0.1.0
 

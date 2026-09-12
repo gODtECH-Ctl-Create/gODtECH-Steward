@@ -25,17 +25,18 @@ Steward is not a second orchestration framework, project scaffolder, or autonomo
 - [x] Expanded tracking detection for high-confidence generated test/tool artifacts.
 - [x] Consumer-style npm package and GitHub Action distribution verification.
 - [x] Standalone gODtECH FORGE evidence adapter using the public result contract.
+- [x] StackPilot-side optional Steward report adapter and contract boundary.
 
 ## Near-term priorities
 
-- [ ] Trusted external rule-pack distribution with explicit compatibility and safety rules.
-- [ ] Optional StackPilot adapter for generic maintenance signals.
+- [x] Define trusted external rule-pack distribution with explicit compatibility and safety rules.
+- [ ] Implement trusted external rule-pack verification and sandbox prototype.
 - [ ] Release-grade package distribution, signing, and artifact provenance.
 - [ ] Additional deterministic health checks where evidence is strong and false-positive cost is low.
 
 ## Rule-pack architecture
 
-Rule packs are the canonical extension boundary for Steward's own analyzers. Built-in packs are versioned and selected deterministically. External executable packs are intentionally deferred until trust, compatibility, and provenance rules are defined.
+Rule packs are the canonical extension boundary for Steward's own analyzers. Built-in packs are versioned and selected deterministically. External executable packs remain disabled until trust, compatibility, provenance, and sandbox rules are implemented.
 
 Current built-in packs:
 
@@ -53,6 +54,25 @@ security@1
 ```
 
 The `core` pack was bumped from version 1 to version 2 because the rule inventory changed. Consumers can therefore distinguish the expanded deterministic health baseline from the previous pack behavior.
+
+## Trusted external rule-pack design
+
+The design milestone establishes these release gates before any external executable rule runs:
+
+1. Versioned manifest schema.
+2. Explicit Steward rule API compatibility.
+3. SHA-256 artifact integrity verification.
+4. Trusted publisher signature verification using Ed25519.
+5. Repository/user allow policy with fail-closed malformed configuration.
+6. Read-only capability boundary.
+7. WebAssembly (WASM) sandbox as the supported executable artifact format.
+8. Bounded memory, execution time, and finding output.
+9. No network, arbitrary filesystem, process, environment, or secret access.
+10. Audit output for accepted and rejected external packs.
+
+Arbitrary JavaScript/Node.js executable rule packs are not a supported trust model. Remediation remains Steward-owned and finding-driven.
+
+The manifest design is documented in [`trusted-rule-packs.md`](./trusted-rule-packs.md) and the design schema is `schemas/steward-rule-pack-manifest.schema.json`. The schema's presence does not enable external pack loading.
 
 ## Deterministic health expansion
 
@@ -79,6 +99,10 @@ Comparison output never copies source-file contents or secret values into delta 
 **gODtECH FORGE (Framework for Orchestrated Reasoning, Governance & Engineering)** owns orchestration and benchmark framing. Steward now provides a separate `steward forge-evidence` artifact for observed repository-health evidence.
 
 The adapter deliberately does not fabricate FORGE benchmark fields such as benchmark IDs, control versus assisted runs, task framing, provider billing, or productivity claims. It carries the Steward scan contract into a safe evidence projection, including repository state, health, findings, rule packs, Continuous Integration (CI) outcome, and optional scan deltas.
+
+## StackPilot integration
+
+StackPilot may consume Steward's `schemaVersion: 1` scan result as an optional observational input. It owns scaffolding, golden paths, and its `readiness-v1` model. StackPilot does not execute Steward remediation or duplicate generic housekeeping rules.
 
 ## Distribution validation
 

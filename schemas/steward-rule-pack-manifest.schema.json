@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gODtECH-Ctl-Create.github.io/gODtECH-Steward/schemas/steward-rule-pack-manifest.schema.json",
+  "title": "gODtECH Steward Rule Pack Manifest",
+  "description": "Design-time contract for future trusted external gODtECH Steward rule packs. Presence of this schema does not enable external pack execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "id",
+    "version",
+    "publisher",
+    "compatibility",
+    "artifact",
+    "capabilities",
+    "limits",
+    "signature"
+  ],
+  "properties": {
+    "$schema": { "type": "string", "format": "uri" },
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "steward-rule-pack" },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "publisher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "keyId"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{1,63}$"
+        },
+        "keyId": {
+          "type": "string",
+          "pattern": "^ed25519:[A-Za-z0-9._:-]{3,127}$"
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleApi", "resultSchema"],
+      "properties": {
+        "ruleApi": { "const": 1 },
+        "resultSchema": { "const": 1 }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "sha256", "sizeBytes", "uri"],
+      "properties": {
+        "format": { "const": "wasm" },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$"
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 104857600
+        },
+        "uri": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["repository.read"]
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxExecutionMs", "maxMemoryMiB", "maxFindings"],
+      "properties": {
+        "maxExecutionMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "maxMemoryMiB": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 256
+        },
+        "maxFindings": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "value"],
+      "properties": {
+        "algorithm": { "const": "ed25519" },
+        "value": {
+          "type": "string",
+          "minLength": 32,
+          "maxLength": 4096
+        }
+      }
+    }
+  }
+}
