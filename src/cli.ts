@@ -48,14 +48,15 @@ function printDoctor(result: Awaited<ReturnType<typeof scanRepository>>): void {
 }
 
 function printRules(disabledPacks: readonly string[], disabledRules: readonly string[]): void {
-  const packs = RULE_PACKS.filter((pack) => !disabledPacks.includes(pack.id));
-  const activeRules = new Set(rulesForPacks(packs, disabledRules).map((rule) => rule.id));
+  const activePacks = RULE_PACKS.filter((pack) => !disabledPacks.includes(pack.id));
+  const activeRules = new Set(rulesForPacks(activePacks, disabledRules).map((rule) => rule.id));
   console.log("gODtECH Steward rule packs");
   console.log("");
-  for (const pack of packs) {
-    console.log(`${pack.id}@${pack.version} - ${pack.description}`);
+  for (const pack of RULE_PACKS) {
+    const packEnabled = !disabledPacks.includes(pack.id);
+    console.log(`${pack.id}@${pack.version} - ${pack.description} [${packEnabled ? "enabled" : "disabled"}]`);
     for (const rule of pack.rules) {
-      const status = activeRules.has(rule.id) ? "enabled" : "disabled";
+      const status = packEnabled && activeRules.has(rule.id) ? "enabled" : "disabled";
       console.log(`  [${status}] ${rule.id} - ${rule.description}`);
     }
   }
