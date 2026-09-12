@@ -11,7 +11,9 @@ const GENERATED_PATTERNS = [
 ];
 
 function hasFile(context: ScanContext, path: string): boolean {
-  return context.files.some((file) => file.relPath === path) || context.trackedFiles.has(path);
+  const expected = path.toLowerCase();
+  return context.files.some((file) => file.relPath.toLowerCase() === expected)
+    || [...context.trackedFiles].some((tracked) => tracked.toLowerCase() === expected);
 }
 
 function trackedGeneratedFiles(context: ScanContext): string[] {
