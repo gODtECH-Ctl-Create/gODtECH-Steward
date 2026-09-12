@@ -1,27 +1,67 @@
-import { readFile, writeFile, access } from "node:fs/promises";
+import { access, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { ScanConfig } from "./types.js";
+import type { ConfigLoadResult, ScanConfig, Severity } from "./types.js";
 
-const DEFAULT_CONFIG: ScanConfig = {
+const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info"];
+
+export const DEFAULT_CONFIG: ScanConfig = {
   version: 1,
   exclude: [],
-  maxFileSizeBytes: 2 * 1024 * 1024,
+  maxFileSizeBytes: 10 * 1024 * 1024,
   largeFileThresholdBytes: 5 * 1024 * 1024,
-  ci: { failOn: "critical" }
+  ci: { failOn: "critical" },
+  rules: { disabled: [] }
 };
 
-export async function loadConfig(root: string): Promise<ScanConfig> {
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
+function validSeverity(value: unknown): value is Severity {
+  return typeof value === "string" && SEVERITIES.includes(value as Severity);
+}
+
+function normaliseExcludes(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter((item): item is string => typeof item === "string" && item.trim().length > 0).map((item) => item.trim()))];
+}
+
+function parseConfig(raw: unknown): ScanConfig {
+  if (!raw || typeof raw !== "object") throw new Error("Configuration must be a JSON object.");
+  const value = raw as Record<string, unknown>;
+  if (value.version !== undefined && value.version !== 1) throw new Error("Unsupported .steward.json version. Expected version 1.");
+
+  const maxFileSizeBytes = value.maxFileSizeBytes ?? DEFAULT_CONFIG.maxFileSizeBytes;
+  const largeFileThresholdBytes = value.largeFileThresholdBytes ?? DEFAULT_CONFIG.largeFileThresholdBytes;
+  if (!isPositiveInteger(maxFileSizeBytes)) throw new Error("maxFileSizeBytes must be a positive integer.");
+  if (!isPositiveInteger(largeFileThresholdBytes)) throw new Error("largeFileThresholdBytes must be a positive integer.");
+  if (largeFileThresholdBytes > maxFileSizeBytes) throw new Error("largeFileThresholdBytes cannot exceed maxFileSizeBytes.");
+
+  const ci = value.ci && typeof value.ci === "object" ? value.ci as Record<string, unknown> : {};
+  const failOn = ci.failOn ?? DEFAULT_CONFIG.ci.failOn;
+  if (!validSeverity(failOn)) throw new Error(`ci.failOn must be one of: ${SEVERITIES.join(", ")}.`);
+
+  const rules = value.rules && typeof value.rules === "object" ? value.rules as Record<string, unknown> : {};
+  const disabled = normaliseExcludes(rules.disabled);
+
+  return {
+    version: 1,
+    exclude: normaliseExcludes(value.exclude),
+    maxFileSizeBytes,
+    largeFileThresholdBytes,
+    ci: { failOn },
+    rules: { disabled }
+  };
+}
+
+export async function loadConfig(root: string): Promise<ConfigLoadResult> {
   const path = join(root, ".steward.json");
   try {
-    const raw = JSON.parse(await readFile(path, "utf8")) as Partial<ScanConfig>;
-    return {
-      ...DEFAULT_CONFIG,
-      ...raw,
-      exclude: Array.isArray(raw.exclude) ? raw.exclude : DEFAULT_CONFIG.exclude,
-      ci: { ...DEFAULT_CONFIG.ci, ...(raw.ci ?? {}) }
-    };
-  } catch {
-    return DEFAULT_CONFIG;
+    return { config: parseConfig(JSON.parse(await readFile(path, "utf8"))) };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return { config: DEFAULT_CONFIG };
+    const message = error instanceof Error ? error.message : "Unable to read .steward.json.";
+    return { config: DEFAULT_CONFIG, warning: message };
   }
 }
 

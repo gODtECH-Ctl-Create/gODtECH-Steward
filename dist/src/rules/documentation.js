@@ -1,21 +1,6 @@
 import { existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-function localTarget(raw) { const value = raw.trim().replace(/^<|>$/g, ""); if (!value || value.startsWith("#") || value.startsWith("/") || /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("//"))
-    return null; return value.split(/[?#]/, 1)[0] ?? null; }
-export function documentationFindings(root, files) { const out = []; for (const f of files) {
-    if (!f.isText || f.content === undefined || !/\.mdx?$/i.test(f.relPath))
-        continue;
-    const regex = /\[[^\]]*\]\(([^)]+)\)/g;
-    for (const m of f.content.matchAll(regex)) {
-        const target = localTarget(m[1] ?? "");
-        if (!target)
-            continue;
-        const candidate = resolve(root, dirname(f.relPath), target);
-        const base = resolve(root);
-        const inside = candidate === base || candidate.startsWith(base + "\\") || candidate.startsWith(base + "/");
-        if (!inside || !existsSync(candidate)) {
-            const line = f.content.slice(0, m.index ?? 0).split(/\r?\n/).length;
-            out.push({ id: "documentation.broken-local-link", rule: "broken-local-link", category: "documentation", severity: "medium", message: "Markdown link points to a missing local target.", path: f.relPath, line, fixable: false, details: target });
-        }
-    }
-} return out; }
+import { resolve } from "node:path";
+const MARKDOWN_LINK = /!?(?:\[[^\]]*\])\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g;
+function isSkippable(target) { return /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(target) || target.startsWith("#"); }
+function stripFragmentAndQuery(target) { return target.split(/[?#]/, 1)[0] ?? target; }
+export const documentationRule = { id: "documentation", category: "documentation", description: "Checks local Markdown links for broken repository-relative targets.", run(context) { const findings = []; for (const file of context.files) { if (!file.isText || file.content === undefined || !/\.(?:md|mdx)$/i.test(file.relPath)) continue; MARKDOWN_LINK.lastIndex = 0; let match; while ((match = MARKDOWN_LINK.exec(file.content)) !== null) { const rawTarget = match[1]; if (!rawTarget || isSkippable(rawTarget)) continue; try { const target = decodeURIComponent(stripFragmentAndQuery(rawTarget)); if (!target || target.startsWith("/")) continue; const base = resolve(context.root, file.relPath, ".."); const absolute = resolve(base, target); if (existsSync(absolute)) continue; const line = file.content.slice(0, match.index).split(/\r?\n/).length; findings.push({ id: `documentation.broken-link.${file.relPath}:${line}:${target}`, rule: "broken-markdown-link", category: "documentation", severity: "low", message: `Local Markdown link does not resolve: ${target}`, path: file.relPath, line, fixable: false, confidence: "high", remediation: "Update the link to an existing repository path or remove the stale reference." }); } catch { const line = file.content.slice(0, match.index).split(/\r?\n/).length; findings.push({ id: `documentation.malformed-link.${file.relPath}:${line}`, rule: "malformed-markdown-link", category: "documentation", severity: "low", message: "Malformed URI in a local Markdown link.", path: file.relPath, line, fixable: false, confidence: "high", remediation: "Encode the link target as a valid URI." }); } } } return findings; } };

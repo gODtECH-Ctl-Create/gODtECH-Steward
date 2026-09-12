@@ -1,15 +1,11 @@
-const SECRET_PATTERNS = [{ name: "private key", regex: /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/ }, { name: "GitHub token", regex: /(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}/ }, { name: "GitHub fine-grained token", regex: /github_pat_[A-Za-z0-9_]{20,}/ }, { name: "AWS access key", regex: /\bAKIA[0-9A-Z]{16}\b/ }, { name: "Slack token", regex: /xox[baprs]-[A-Za-z0-9-]{20,}/ }, { name: "Stripe secret key", regex: /\bsk_(?:live|test)_[A-Za-z0-9]{16,}\b/ }];
-function isEnvFile(path) { const name = path.split("/").pop()?.toLowerCase() ?? ""; return name === ".env" || (name.startsWith(".env.") && !name.endsWith(".example") && !name.endsWith(".template")); }
-export function securityFindings(files, tracked) { const out = []; for (const f of files) {
-    if (isEnvFile(f.relPath) && tracked.has(f.relPath))
-        out.push({ id: "security.tracked-env-file", rule: "tracked-env-file", category: "security", severity: "critical", message: "An environment file appears to be tracked by Git.", path: f.relPath, fixable: false });
-    if (!f.isText || f.content === undefined)
-        continue;
-    for (const p of SECRET_PATTERNS) {
-        const m = p.regex.exec(f.content);
-        if (m === null)
-            continue;
-        const line = f.content.slice(0, m.index).split(/\r?\n/).length;
-        out.push({ id: `security.possible-secret.${p.name.replaceAll(" ", "-")}`, rule: "possible-secret", category: "security", severity: "critical", message: `Possible ${p.name} detected.`, path: f.relPath, line, fixable: false });
-    }
-} return out; }
+const SECRET_PATTERNS = [
+    { key: "private-key", name: "private key", regex: /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/ },
+    { key: "github-token", name: "GitHub token", regex: /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b/ },
+    { key: "github-pat", name: "GitHub fine-grained token", regex: /\bgithub_pat_[A-Za-z0-9_]{20,}\b/ },
+    { key: "aws-access-key", name: "AWS access key", regex: /\bAKIA[0-9A-Z]{16}\b/ },
+    { key: "slack-token", name: "Slack token", regex: /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/ },
+    { key: "stripe-secret-key", name: "Stripe secret key", regex: /\bsk_(?:live|test)_[A-Za-z0-9]{16,}\b/ }
+];
+function isEnvFile(path) { const name = path.split("/").at(-1)?.toLowerCase() ?? ""; return name === ".env" || (name.startsWith(".env.") && !name.endsWith(".example") && !name.endsWith(".template")); }
+function lineNumber(text, index) { return text.slice(0, index).split(/\r?\n/).length; }
+export const securityRule = { id: "security", category: "security", description: "Detects high-confidence tracked environment files and known credential patterns.", run(context) { const findings = []; for (const file of context.files) { if (isEnvFile(file.relPath) && context.trackedFiles.has(file.relPath)) findings.push({ id: "security.tracked-env-file", rule: "tracked-env-file", category: "security", severity: "critical", message: "An environment file appears to be tracked by Git.", path: file.relPath, fixable: false, confidence: "high", remediation: "Remove the file from version control, rotate any exposed credentials, and keep environment files ignored." }); if (!file.isText || file.content === undefined) continue; for (const pattern of SECRET_PATTERNS) { pattern.regex.lastIndex = 0; const match = pattern.regex.exec(file.content); if (!match) continue; findings.push({ id: `security.possible-secret.${pattern.key}`, rule: "possible-secret", category: "security", severity: "critical", message: `Possible ${pattern.name} detected.`, path: file.relPath, line: lineNumber(file.content, match.index), fixable: false, confidence: "high", remediation: "Treat the value as compromised until proven otherwise and rotate it outside source control." }); } } return findings; } };

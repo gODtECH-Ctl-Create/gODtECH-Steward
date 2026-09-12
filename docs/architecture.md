@@ -2,7 +2,7 @@
 
 ## Product boundary
 
-Steward is a deterministic repository-health and housekeeping engine. The first release does not attempt to understand an entire application semantically, auto-delete uncertain code, or require an artificial intelligence model.
+Steward is a deterministic repository-health and software-housekeeping engine. The core does not require a network service or artificial intelligence (AI) model to establish ordinary repository facts.
 
 ## Execution flow
 
@@ -10,65 +10,73 @@ Steward is a deterministic repository-health and housekeeping engine. The first 
 Repository
     |
     v
-Config loader (.steward.json)
+Configuration + Git facts
     |
     v
-File collector + Git facts
-    |
-    +--> Repository rules
-    +--> Security rules
-    +--> Documentation rules
-    +--> Hygiene rules
+File collector
     |
     v
-Findings
+Rule registry
     |
-    +--> Human report
+    +--> repository
+    +--> security
+    +--> documentation
+    +--> dependencies
+    +--> maintenance
+    +--> hygiene
+    |
+    v
+Stable findings
+    |
+    +--> human report
     +--> JSON report
-    +--> CI decision
-    +--> Safe remediation
+    +--> continuous integration (CI) gate
+    +--> safe remediation
 ```
 
-## Core design rules
+## Core contracts
 
-1. Deterministic checks own facts. They should not need a model to decide whether a file exists, a link resolves, a token pattern is present, or whitespace is inconsistent.
-2. Every finding carries a stable rule identifier, category, severity, location when available, and whether safe automation is allowed.
-3. Safe remediation is opt-in. `fix` refuses to modify files unless `--safe` is explicitly supplied.
-4. Security findings are never auto-fixed by the current engine.
-5. CLI and GitHub Action use the same compiled engine so they cannot silently drift into separate implementations.
-6. The rule engine is intentionally modular so future language-aware, dependency-aware, architecture, and product-health rules can be added without replacing the scanner.
+`ScanContext` contains verified repository facts, the effective configuration, the collected files, and Git metadata scoped to the requested repository path.
 
-## First-release rule set
+`StewardRule` is a read-only analysis contract:
 
-- Missing README
-- Missing `.gitignore`
-- Large files
-- Tracked environment files
-- Strong known-secret patterns
-- Broken local Markdown links
-- Safe source/configuration whitespace cleanup
-- Missing final newline
+```ts
+interface StewardRule {
+  id: string;
+  category: Category;
+  description: string;
+  run(context: ScanContext): Finding[];
+}
+```
 
-The rule set is deliberately conservative. False positives are more damaging than a smaller initial rule surface.
+Rules return findings rather than mutating the repository. Each finding identifies its rule, severity, confidence, location where available, remediation guidance, and whether safe automation is supported.
 
-## Future extension points
+## Safety boundaries
+
+- Scanning does not write files.
+- Safe remediation is explicit with `--safe`.
+- `--dry-run` never writes.
+- Only findings marked `fixable` can be passed to the remediation engine.
+- Security findings are never auto-remediated.
+- The default rule set avoids speculative deletion and project-specific assumptions.
+
+## Extension model
+
+Future capabilities should become additional rule modules or adapters:
 
 ```text
 Rules
-  + language analysis
+  + language-aware analysis
   + dependency graph analysis
-  + test/build adapters
-  + GitHub metadata checks
+  + build/test adapters
+  + GitHub metadata
   + architecture checks
   + policy evaluation
   + product-health checks
 
-Fixers
-  + safe deterministic fixes
-  + reviewable patch generation
-
-Adapters
+Interfaces
   + CLI
   + GitHub Action
-  + future editor / CI integrations
+  + editor integrations
+  + Model Context Protocol (MCP) integration
 ```

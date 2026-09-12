@@ -18,7 +18,9 @@ export interface Finding {
   path?: string;
   line?: number;
   fixable: boolean;
+  confidence: "high" | "medium" | "low";
   details?: string;
+  remediation?: string;
 }
 
 export interface FileEntry {
@@ -30,13 +32,40 @@ export interface FileEntry {
 }
 
 export interface ScanConfig {
-  version: number;
+  version: 1;
   exclude: string[];
   maxFileSizeBytes: number;
   largeFileThresholdBytes: number;
   ci: {
     failOn: Severity;
   };
+  rules: {
+    disabled: string[];
+  };
+}
+
+export interface GitFacts {
+  isRepository: boolean;
+  root?: string;
+  branch?: string;
+  commit?: string;
+  dirty?: boolean;
+  trackedFiles: ReadonlySet<string>;
+}
+
+export interface ScanContext {
+  root: string;
+  config: ScanConfig;
+  files: readonly FileEntry[];
+  trackedFiles: ReadonlySet<string>;
+  git: GitFacts;
+}
+
+export interface StewardRule {
+  id: string;
+  category: Category;
+  description: string;
+  run(context: ScanContext): Finding[];
 }
 
 export interface ScanResult {
@@ -47,4 +76,12 @@ export interface ScanResult {
   findings: Finding[];
   healthScore: number;
   durationMs: number;
+  git: GitFacts;
+  categoryCounts: Partial<Record<Category, number>>;
+  ruleCounts: Record<string, number>;
+}
+
+export interface ConfigLoadResult {
+  config: ScanConfig;
+  warning?: string;
 }

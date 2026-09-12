@@ -2,7 +2,7 @@
 
 > Keep your software healthy.
 
-**gODtECH Steward** is a deterministic software and repository housekeeping engine. It scans a codebase for concrete maintenance, security, documentation, and repository-health issues, produces auditable findings, and applies only explicitly requested safe fixes.
+**gODtECH Steward** turns software housekeeping into a repeatable engineering step. It scans repositories deterministically, produces explainable findings, and applies only explicitly enabled safe fixes.
 
 <div align="center">
 
@@ -14,11 +14,23 @@
 
 ---
 
-## What is Steward?
+## What Steward does
 
-Steward is for developers and teams who want repository maintenance to become an inspectable engineering step instead of a pile of forgotten cleanup tasks.
+Steward is built for developers and teams that want repository maintenance to be visible, repeatable, and safe.
 
-The first release intentionally stays conservative. It does not delete uncertain code, rewrite architecture, or require an artificial intelligence model to decide deterministic facts.
+It currently checks:
+
+| Area | Checks |
+| --- | --- |
+| **Repository** | README, `.gitignore`, large files, disposable tracked artifacts |
+| **Security** | Tracked environment files and high-confidence credential patterns |
+| **Documentation** | Broken and malformed local Markdown links |
+| **Dependencies** | Package-manager and lockfile consistency, invalid `package.json` |
+| **Maintenance** | Unresolved merge-conflict markers and TODO/FIXME maintenance markers |
+| **Hygiene** | Trailing whitespace and missing final newlines |
+| **Reporting** | Health score, severity counts, category counts, JSON output |
+
+Steward deliberately does **not** delete uncertain files, rewrite architecture, or require artificial intelligence (AI) for deterministic repository facts.
 
 ## Workflow
 
@@ -26,31 +38,26 @@ The first release intentionally stays conservative. It does not delete uncertain
 REPOSITORY
     |
     v
-SCAN
+CONFIG + GIT FACTS
     |
-    +--> FINDINGS
-    |      |
-    |      +--> human report
-    |      +--> JSON report
-    |      +--> CI decision
+    v
+FILE COLLECTION
     |
-    +--> SAFE FIXES (explicit opt-in)
+    v
+RULE REGISTRY
+    |
+    v
+FINDINGS
+    |
+    +--> human report
+    +--> JSON report
+    +--> CI decision
+    +--> explicit safe remediation
 ```
-
-## Capabilities
-
-| Capability | Outcome |
-| --- | --- |
-| **Repository checks** | Detect missing README / `.gitignore` and oversized files |
-| **Security checks** | Flag tracked environment files and strong known-secret patterns |
-| **Documentation checks** | Detect broken local Markdown links |
-| **Hygiene checks** | Detect and safely normalize selected source/configuration whitespace |
-| **Health score** | Turn findings into a simple, repeatable repository signal |
-| **JSON output** | Make findings consumable by automation and future integrations |
 
 ## Installation
 
-Steward is in early development. Install from a local checkout:
+Steward is currently developed from source.
 
 ```bash
 git clone https://github.com/gODtECH-Ctl-Create/gODtECH-Steward.git
@@ -60,14 +67,14 @@ npm run build
 npm install -g .
 ```
 
-The installed commands are:
+The command-line interface (CLI) is available as:
 
 ```bash
 steward --help
-gotek-steward --help
+godtech-steward --help
 ```
 
-## Usage
+## CLI usage
 
 Initialize repository configuration:
 
@@ -81,7 +88,7 @@ Scan a repository:
 steward scan
 ```
 
-Run the diagnostic view:
+Get a diagnostic view with category summary:
 
 ```bash
 steward doctor
@@ -99,13 +106,19 @@ Write a JSON report:
 steward report --output .steward-report.json
 ```
 
-Apply only the currently supported safe fixes:
+Preview safe fixes without changing files:
+
+```bash
+steward fix --safe --dry-run
+```
+
+Apply only findings explicitly marked safe:
 
 ```bash
 steward fix --safe
 ```
 
-For continuous integration (CI), Steward can fail when a configured severity threshold is found:
+Fail a continuous integration (CI) job when the configured severity threshold is present:
 
 ```bash
 steward scan --ci
@@ -113,25 +126,28 @@ steward scan --ci
 
 ## Configuration
 
-`steward init` creates `.steward.json`. The configuration is intentionally small and repository-owned so a fork can change its own housekeeping policy without changing the engine.
+`steward init` creates `.steward.json`. Configuration is repository-owned so forks and teams can change policy without changing the engine.
 
 ```json
 {
   "version": 1,
-  "exclude": ["vendor"],
-  "maxFileSizeBytes": 2097152,
+  "exclude": ["vendor/**"],
+  "maxFileSizeBytes": 10485760,
   "largeFileThresholdBytes": 5242880,
   "ci": {
     "failOn": "critical"
+  },
+  "rules": {
+    "disabled": []
   }
 }
 ```
 
+`exclude` supports repository-relative wildcard patterns. Disabled entries use registered rule IDs such as `security`, `dependencies`, or `maintenance`.
+
 ## GitHub Action
 
-The repository includes a composite GitHub Action using the same compiled Steward engine as the CLI.
-
-After the project is merged to the default branch or released, a consumer workflow can use the repository as an Action:
+Steward includes a composite GitHub Action that invokes the same compiled engine as the CLI.
 
 ```yaml
 name: Steward
@@ -151,35 +167,68 @@ jobs:
       - uses: gODtECH-Ctl-Create/gODtECH-Steward@main
 ```
 
-During development, pin the Action to the development branch or a release tag rather than relying on moving references.
+Custom arguments are passed as a JSON array to avoid shell re-parsing:
+
+```yaml
+      - uses: gODtECH-Ctl-Create/gODtECH-Steward@main
+        with:
+          args: '["scan", "--ci", "--json"]'
+```
+
+During development, pin the Action to a reviewed branch or release tag instead of a moving development reference.
+
+## Safety model
+
+Steward follows one rule: **observe first, explain second, modify only when the requested fix is deterministic and explicitly enabled**.
+
+`fix` always refuses to modify files without `--safe`. `--dry-run` never writes. Security findings are observation-only. The current safe fixer only normalizes formatting-level hygiene findings.
 
 ## Architecture
 
 ```text
-File collector + Git facts
-            |
-            v
-       Rule modules
-            |
-            v
-         Findings
-            |
-     +------+------+-----+
-     |      |      |     |
-   Text    JSON    CI   Safe fix
-   report  report        engine
+                    +----------------+
+                    | CLI / Action   |
+                    +-------+--------+
+                            |
+                            v
+                    +---------------+
+                    | Scan pipeline |
+                    +-------+-------+
+                            |
+          +-----------------+-----------------+
+          |                 |                 |
+          v                 v                 v
+     config + Git       file collector    rule registry
+          |                 |                 |
+          +-----------------+-----------------+
+                            |
+                            v
+                       stable findings
+                            |
+              +-------------+-------------+
+              |             |             |
+              v             v             v
+            text          JSON            CI
+           report         report         gate
+                            |
+                            v
+                      safe remediation
 ```
 
-Read the implementation notes in [`docs/architecture.md`](docs/architecture.md).
+See [`docs/architecture.md`](docs/architecture.md) and [`docs/rules.md`](docs/rules.md).
 
-## Safety model
+## Development
 
-Steward follows a conservative rule: **observe first, explain second, modify only when the fix is deterministic and explicitly requested**.
+The repository follows the gODtECH FORGE delivery model: material work is tracked, implemented on a dedicated branch, verified, and documented before merge.
 
-Security findings are never automatically remediated by the current engine. `fix` refuses to modify a repository unless `--safe` is present.
+```bash
+npm run check
+npm run build
+npm test
+```
 
 ## Status
 
-**Foundation / early development**
+**Early development / hardened foundation**
 
-The core scanning model, initial rules, CLI, JSON reporting, safe remediation path, configuration format, tests, and Action entrypoint are established. Broader language-aware analysis, dependency graph analysis, richer GitHub metadata checks, and product-health checks remain planned.
+The deterministic engine, CLI, reporting contract, configuration validation, first rule set, conservative remediation model, and GitHub Action integration are established. Future work can add language-aware analysis, dependency graphs, richer GitHub metadata, architecture checks, and broader product-health capabilities without replacing the core pipeline.
