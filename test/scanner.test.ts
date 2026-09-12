@@ -26,7 +26,8 @@ test("scanner detects strong secret patterns", async () => {
   const root = await fixture();
   await writeFile(join(root, "README.md"), "# Example\n", "utf8");
   await writeFile(join(root, ".gitignore"), "node_modules/\n", "utf8");
-  await writeFile(join(root, "config.ts"), "const token = 'ghp_123456789012345678901234567890';\n", "utf8");
+  const token = ["ghp_", "123456789012345678901234567890"].join("");
+  await writeFile(join(root, "config.ts"), `const token = '${token}';\n`, "utf8");
   const result = await scanRepository(root);
   assert.equal(result.findings.some((finding) => finding.severity === "critical"), true);
 });
