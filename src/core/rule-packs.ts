@@ -19,7 +19,7 @@ const CORE_RULES: readonly StewardRule[] = [
 export const RULE_PACKS: readonly RulePack[] = [
   {
     id: "core",
-    version: 1,
+    version: 2,
     description: "Generic repository, documentation, dependency, maintenance, metadata, and hygiene checks.",
     rules: CORE_RULES,
   },
