@@ -24,11 +24,11 @@ Steward is not a second orchestration framework, project scaffolder, or autonomo
 - [x] Project metadata checks for package identity and publishable-package completeness.
 - [x] Expanded tracking detection for high-confidence generated test/tool artifacts.
 - [x] Consumer-style npm package and GitHub Action distribution verification.
+- [x] Standalone gODtECH FORGE evidence adapter using the public result contract.
 
 ## Near-term priorities
 
 - [ ] Trusted external rule-pack distribution with explicit compatibility and safety rules.
-- [ ] Forge adapter using the public result contract.
 - [ ] Optional StackPilot adapter for generic maintenance signals.
 - [ ] Release-grade package distribution, signing, and artifact provenance.
 - [ ] Additional deterministic health checks where evidence is strong and false-positive cost is low.
@@ -74,9 +74,15 @@ Every finding may expose a stable SHA-256 fingerprint derived from its identity 
 
 Comparison output never copies source-file contents or secret values into delta evidence.
 
+## FORGE evidence adapter
+
+**gODtECH FORGE (Framework for Orchestrated Reasoning, Governance & Engineering)** owns orchestration and benchmark framing. Steward now provides a separate `steward forge-evidence` artifact for observed repository-health evidence.
+
+The adapter deliberately does not fabricate FORGE benchmark fields such as benchmark IDs, control versus assisted runs, task framing, provider billing, or productivity claims. It carries the Steward scan contract into a safe evidence projection, including repository state, health, findings, rule packs, Continuous Integration (CI) outcome, and optional scan deltas.
+
 ## Distribution validation
 
-The distribution gate builds the actual npm tarball, inspects the published file set, installs it into a clean consumer directory without registry access, executes both CLI aliases, validates the versioned JSON output, runs the packaged GitHub Action, and rejects malformed Action argument payloads.
+The distribution gate builds the actual npm tarball, inspects the published file set, installs it into a clean consumer directory without registry access, executes both CLI aliases, validates the versioned JSON output, exercises `forge-evidence`, runs the packaged GitHub Action, and rejects malformed Action argument payloads.
 
 The package intentionally excludes the TypeScript source tree and `node_modules` while shipping the compiled engine required by both package consumers and the Action runner.
 
