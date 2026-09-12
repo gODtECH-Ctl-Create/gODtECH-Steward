@@ -31,16 +31,16 @@ export function worktreeDirty(root: string): boolean {
   return output !== null && output.length > 0;
 }
 
-export function gitFacts(root: string): GitFacts {
-  const topLevel = runGit(root, ["rev-parse", "--show-toplevel"]);
+export function gitFacts(inputRoot: string): GitFacts {
+  const topLevel = runGit(inputRoot, ["rev-parse", "--show-toplevel"]);
   if (!topLevel) return { isRepository: false, trackedFiles: new Set() };
   return {
     isRepository: true,
     root: topLevel,
-    branch: runGit(root, ["branch", "--show-current"]) || undefined,
-    commit: runGit(root, ["rev-parse", "HEAD"]) || undefined,
-    dirty: worktreeDirty(root),
-    trackedFiles: trackedFiles(root)
+    branch: runGit(topLevel, ["branch", "--show-current"]) || undefined,
+    commit: runGit(topLevel, ["rev-parse", "HEAD"]) || undefined,
+    dirty: worktreeDirty(topLevel),
+    trackedFiles: trackedFiles(topLevel)
   };
 }
 
