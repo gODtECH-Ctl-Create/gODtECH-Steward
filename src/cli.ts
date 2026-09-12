@@ -27,7 +27,15 @@ function option(args: string[], name: string): string | undefined {
 }
 
 function targetPath(args: string[]): string {
-  return args.find((arg) => !arg.startsWith("--") && arg !== "scan" && arg !== "doctor" && arg !== "report" && arg !== "fix" && arg !== "init") ?? ".";
+  for (let i = 1; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg === "--output") {
+      i += 1;
+      continue;
+    }
+    if (!arg.startsWith("--") && arg !== "scan" && arg !== "doctor" && arg !== "report" && arg !== "fix" && arg !== "init") return arg;
+  }
+  return ".";
 }
 
 async function main(): Promise<void> {
