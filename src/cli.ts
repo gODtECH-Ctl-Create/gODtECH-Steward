@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { collectFiles } from "./core/files.js";
 import { initConfig, loadConfig } from "./core/config.js";
 import { scanRepository } from "./core/scanner.js";
-import { enabledPackSummaries, RULE_PACKS, enabledRules, rulesForPacks } from "./core/rules.js";
+import { RULE_PACKS, rulesForPacks } from "./core/rules.js";
 import { hasCiFailure, formatSummary, toJson, toText } from "./core/report.js";
 import { applySafeFixes } from "./rules/hygiene.js";
 import type { Severity } from "./core/types.js";
@@ -49,14 +49,13 @@ function printDoctor(result: Awaited<ReturnType<typeof scanRepository>>): void {
 
 function printRules(disabledPacks: readonly string[], disabledRules: readonly string[]): void {
   const packs = RULE_PACKS.filter((pack) => !disabledPacks.includes(pack.id));
-  const rules = rulesForPacks(packs, disabledRules);
+  const activeRules = new Set(rulesForPacks(packs, disabledRules).map((rule) => rule.id));
   console.log("gODtECH Steward rule packs");
   console.log("");
   for (const pack of packs) {
     console.log(`${pack.id}@${pack.version} - ${pack.description}`);
     for (const rule of pack.rules) {
-      const active = rules.some((candidate) => candidate.id === rule.id);
-      const status = active ? "enabled" : "disabled";
+      const status = activeRules.has(rule.id) ? "enabled" : "disabled";
       console.log(`  [${status}] ${rule.id} - ${rule.description}`);
     }
   }
