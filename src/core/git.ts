@@ -34,11 +34,9 @@ export function worktreeDirty(root: string): boolean {
 export function gitFacts(root: string): GitFacts {
   const topLevel = runGit(root, ["rev-parse", "--show-toplevel"]);
   if (!topLevel) return { isRepository: false, trackedFiles: new Set() };
-  const gitRoot = topLevel;
-  const tracked = trackedFiles(root).map;
   return {
     isRepository: true,
-    root: gitRoot,
+    root: topLevel,
     branch: runGit(root, ["branch", "--show-current"]) || undefined,
     commit: runGit(root, ["rev-parse", "HEAD"]) || undefined,
     dirty: worktreeDirty(root),
