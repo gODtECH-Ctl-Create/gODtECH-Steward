@@ -1,0 +1,96 @@
+name: Publish gODtECH Steward
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: steward-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Verify release metadata
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: npm run verify:release
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full verification
+        run: npm run verify
+
+      - name: Verify package distribution
+        run: npm run verify:package
+
+      - name: Pack npm release
+        run: npm pack --silent
+
+      - name: Resolve release artifacts
+        id: artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARBALL="$(find . -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          test -n "$TARBALL"
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+          sha256sum "$TARBALL" > SHA256SUMS
+          npm sbom --sbom-format spdx > sbom.spdx.json
+
+      - name: Attest npm package
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ steps.artifacts.outputs.tarball }}
+
+      - name: Attest npm package SBOM
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ steps.artifacts.outputs.tarball }}
+          sbom-path: sbom.spdx.json
+
+      - name: Publish to npm with trusted publishing
+        run: npm publish --access public
+
+      - name: Verify npm publication
+        env:
+          PACKAGE_NAME: "@godtech/steward"
+          PACKAGE_VERSION: "0.1.0"
+        run: |
+          set -euo pipefail
+          published_version="$(npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version --json | tr -d '"')"
+          test "$published_version" = "$PACKAGE_VERSION"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: "0.1.0"
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "${{ steps.artifacts.outputs.tarball }}" \
+            SHA256SUMS \
+            sbom.spdx.json \
+            --title "gODtECH Steward ${VERSION}" \
+            --generate-notes \
+            --verify-tag
