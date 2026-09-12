@@ -26,17 +26,21 @@ Steward is not a second orchestration framework, project scaffolder, or autonomo
 - [x] Consumer-style npm package and GitHub Action distribution verification.
 - [x] Standalone gODtECH FORGE evidence adapter using the public result contract.
 - [x] StackPilot-side optional Steward report adapter and contract boundary.
+- [x] Trusted external rule-pack verification and conservative sandbox prototype.
+- [x] Public npm release with tag-driven provenance and artifact attestations.
+- [x] Product landing page prepared for GitHub Pages.
+- [x] Product README redesigned around the public release and end-user installation path.
 
 ## Near-term priorities
 
-- [x] Define trusted external rule-pack distribution with explicit compatibility and safety rules.
-- [x] Implement trusted external rule-pack verification and sandbox prototype.
-- [ ] Release-grade package distribution, signing, and artifact provenance.
-- [ ] Additional deterministic health checks where evidence is strong and false-positive cost is low.
+- [ ] Improve signal quality where intentional test fixtures or documentation markers create noisy findings.
+- [ ] Add additional deterministic health checks only where evidence is strong and false-positive cost is low.
+- [ ] Expand language-aware analysis selectively, without turning Steward into a general-purpose static analyzer.
+- [ ] Complete the audited execution model required before trusted external executable rule packs can run.
 
 ## Rule-pack architecture
 
-Rule packs are the canonical extension boundary for Steward's own analyzers. Built-in packs are versioned and selected deterministically. External executable packs remain disabled until trust, compatibility, provenance, and sandbox rules are implemented.
+Rule packs are the canonical extension boundary for Steward's own analyzers. Built-in packs are versioned and selected deterministically. External executable packs remain disabled until trust, compatibility, provenance, and sandbox rules are fully satisfied.
 
 Current built-in packs:
 
@@ -57,7 +61,7 @@ The `core` pack was bumped from version 1 to version 2 because the rule inventor
 
 ## Trusted external rule-pack design
 
-The design milestone establishes these release gates before any external executable rule runs:
+The design milestone establishes these gates before any external executable rule runs:
 
 1. Versioned manifest schema.
 2. Explicit Steward rule API compatibility.
@@ -71,8 +75,6 @@ The design milestone establishes these release gates before any external executa
 10. Audit output for accepted and rejected external packs.
 
 Arbitrary JavaScript/Node.js executable rule packs are not a supported trust model. Remediation remains Steward-owned and finding-driven.
-
-The manifest design is documented in [`trusted-rule-packs.md`](./trusted-rule-packs.md), the manifest schema is `schemas/steward-rule-pack-manifest.schema.json`, and the repository-owned trust policy schema is `schemas/steward-external-pack-policy.schema.json`.
 
 ## Trusted verification implementation
 
@@ -122,7 +124,7 @@ Comparison output never copies source-file contents or secret values into delta 
 
 ## FORGE evidence adapter
 
-**gODtECH FORGE (Framework for Orchestrated Reasoning, Governance & Engineering)** owns orchestration and benchmark framing. Steward now provides a separate `steward forge-evidence` artifact for observed repository-health evidence.
+**gODtECH FORGE (Framework for Orchestrated Reasoning, Governance & Engineering)** owns orchestration and benchmark framing. Steward provides a separate `steward forge-evidence` artifact for observed repository-health evidence.
 
 The adapter deliberately does not fabricate FORGE benchmark fields such as benchmark IDs, control versus assisted runs, task framing, provider billing, or productivity claims. It carries the Steward scan contract into a safe evidence projection, including repository state, health, findings, rule packs, Continuous Integration (CI) outcome, and optional scan deltas.
 
@@ -138,7 +140,11 @@ The package intentionally excludes the TypeScript source tree and `node_modules`
 
 ## Release line
 
-The package currently identifies as version `0.1.0`, but the first public release remains gated on release-grade artifact provenance, signing, trusted distribution metadata, and a final package/Action smoke test from the tagged source tree.
+The public release line currently identifies as version `0.1.0` and is published as `@godtech/steward@0.1.0` under the tag `v0.1.0`. Releases are tag-driven and use npm Trusted Publishing, GitHub artifact attestations, SHA-256 checksums, and an SPDX Software Bill of Materials (SBOM).
+
+## Product presentation
+
+The GitHub Pages site lives under `site/` and is intentionally static. The README and site should share the same verified release facts, install commands, safety boundary, and integration semantics.
 
 ## gODtECH ecosystem
 
