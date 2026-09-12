@@ -21,14 +21,16 @@ Steward is not a second orchestration framework, project scaffolder, or autonomo
 - [x] Built-in versioned rule packs with pack-level and rule-level policy.
 - [x] Reproducible package installation with a committed npm lockfile and `npm ci` verification.
 - [x] Stable finding fingerprints and deterministic before/after health deltas.
+- [x] Project metadata checks for package identity and publishable-package completeness.
+- [x] Expanded tracking detection for high-confidence generated test/tool artifacts.
 
 ## Near-term priorities
 
-- [ ] Broader deterministic repository analysis where the evidence is provable and the scope is justified.
 - [ ] Trusted external rule-pack distribution with explicit compatibility and safety rules.
 - [ ] Forge adapter using the public result contract.
 - [ ] Optional StackPilot adapter for generic maintenance signals.
 - [ ] Release-grade package distribution, signing, and artifact provenance.
+- [ ] Additional deterministic health checks where evidence is strong and false-positive cost is low.
 
 ## Rule-pack architecture
 
@@ -37,16 +39,19 @@ Rule packs are the canonical extension boundary for Steward's own analyzers. Bui
 Current built-in packs:
 
 ```text
-core@1
+core@2
   repository
   documentation
   dependencies
   maintenance
+  metadata
   hygiene
 
 security@1
   security
 ```
+
+`core` was bumped from version 1 to version 2 because the pack gained a new metadata rule and expanded deterministic generated-artifact signals.
 
 A generic housekeeping capability belongs here rather than being copied into Forge or StackPilot.
 
