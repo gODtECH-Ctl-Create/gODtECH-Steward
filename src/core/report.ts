@@ -11,13 +11,13 @@ function countBySeverity(findings: readonly Finding[]): Record<Severity, number>
 }
 
 export function toJson(result: ScanResult): string {
-  return JSON.stringify({ ...result, generatedAt: new Date().toISOString() }, null, 2);
+  return JSON.stringify(result, null, 2);
 }
 
 export function toText(result: ScanResult): string {
   const severity = countBySeverity(result.findings);
   const lines = [
-    `gODtECH Steward`,
+    "gODtECH Steward",
     `Health ${result.healthScore}/100`,
     `${result.scannedFiles} files scanned | ${result.textFiles} text files | ${result.durationMs}ms`,
     result.git.isRepository
