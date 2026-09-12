@@ -47,9 +47,11 @@ try {
     "action.yml",
     "action-runner.cjs",
     "schemas/steward-result.schema.json",
+    "schemas/steward-forge-evidence.schema.json",
     "dist/src/cli.js",
     "dist/src/core/scanner.js",
     "dist/src/core/rule-packs.js",
+    "dist/src/core/forge-evidence.js",
     "dist/src/rules/metadata.js",
   ];
   for (const entry of required) assert(normalised.includes(entry), `Package is missing required entry: ${entry}`);
@@ -72,6 +74,13 @@ try {
   const scan = JSON.parse(scanRaw);
   assert(scan.schemaVersion === 1, "Installed package did not emit schemaVersion 1.");
   assert(scan.tool === "gODtECH Steward", "Installed package returned an unexpected tool identity.");
+
+  const forgeEvidenceRaw = run(process.execPath, [cli, "forge-evidence", fixture], { cwd: fixture });
+  const forgeEvidence = JSON.parse(forgeEvidenceRaw);
+  assert(forgeEvidence.schemaVersion === 1, "Installed Forge evidence did not emit schemaVersion 1.");
+  assert(forgeEvidence.evidenceType === "repository-health", "Installed Forge evidence returned an unexpected evidence type.");
+  assert(forgeEvidence.producer?.name === "gODtECH Steward", "Installed Forge evidence returned an unexpected producer.");
+  assert(Array.isArray(forgeEvidence.observation?.findings), "Installed Forge evidence did not include findings.");
 
   const action = spawnSync(process.execPath, [actionRunner], {
     cwd: fixture,
