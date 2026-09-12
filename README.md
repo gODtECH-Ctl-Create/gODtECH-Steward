@@ -221,6 +221,18 @@ Custom arguments are passed as a JSON array to avoid shell re-parsing:
 
 During development, pin the Action to a reviewed branch or release tag instead of a moving development reference.
 
+## Distribution verification
+
+Before a release, Steward can verify the actual npm package consumers receive:
+
+```bash
+npm run verify:package
+```
+
+The verification builds the package, inspects its archive contents, installs the generated tarball into a clean consumer directory, executes both `steward` and `godtech-steward`, validates the versioned JSON scan contract, runs the packaged GitHub Action, and confirms malformed Action argument payloads are rejected.
+
+The distribution workflow runs this verification remotely on every push and pull request. This keeps the CLI, package archive, and Action runner tied to the same compiled `dist/` artifact.
+
 ## Safety model
 
 Steward follows one rule: **observe first, explain second, modify only when the requested fix is deterministic and explicitly enabled**.
@@ -299,10 +311,11 @@ npm ci
 npm run check
 npm run build
 npm test
+npm run verify:package
 ```
 
 ## Status
 
 **Active development / evidence-aware maintenance**
 
-The deterministic engine, CLI, reporting contract, reproducible installation path, configuration validation, versioned rule packs, stable finding fingerprints, before/after deltas, broader metadata and generated-artifact health checks, conservative remediation model, and GitHub Action integration are established. Future work can add trusted external rule-pack distribution, Forge and StackPilot adapters, language-aware analysis, dependency graphs, richer health evidence, and release-grade artifact provenance without replacing the core pipeline.
+The deterministic engine, CLI, reporting contract, reproducible installation path, configuration validation, versioned rule packs, stable finding fingerprints, before/after deltas, broader repository-health checks, consumer-style package verification, conservative remediation model, and GitHub Action integration are established. Future work can add trusted external rule-pack distribution, Forge and StackPilot adapters, language-aware analysis, dependency graphs, richer health evidence, and release-grade artifact provenance without replacing the core pipeline.

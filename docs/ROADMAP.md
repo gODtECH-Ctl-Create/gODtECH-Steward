@@ -23,6 +23,7 @@ Steward is not a second orchestration framework, project scaffolder, or autonomo
 - [x] Stable finding fingerprints and deterministic before/after health deltas.
 - [x] Project metadata checks for package identity and publishable-package completeness.
 - [x] Expanded tracking detection for high-confidence generated test/tool artifacts.
+- [x] Consumer-style npm package and GitHub Action distribution verification.
 
 ## Near-term priorities
 
@@ -72,6 +73,12 @@ Every finding may expose a stable SHA-256 fingerprint derived from its identity 
 `steward report . --output current.json --compare previous.json` produces a deterministic delta covering health change, added and resolved finding references, unchanged findings, severity changes, and category changes.
 
 Comparison output never copies source-file contents or secret values into delta evidence.
+
+## Distribution validation
+
+The distribution gate builds the actual npm tarball, inspects the published file set, installs it into a clean consumer directory without registry access, executes both CLI aliases, validates the versioned JSON output, runs the packaged GitHub Action, and rejects malformed Action argument payloads.
+
+The package intentionally excludes the TypeScript source tree and `node_modules` while shipping the compiled engine required by both package consumers and the Action runner.
 
 ## gODtECH ecosystem
 
