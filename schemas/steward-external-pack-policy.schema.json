@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gODtECH-Ctl-Create.github.io/gODtECH-Steward/schemas/steward-external-pack-policy.schema.json",
+  "title": "gODtECH Steward External Rule-Pack Trust Policy",
+  "description": "Opt-in policy for trusted external rule-pack verification. This policy never enables external execution by itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["requireSigned", "allow", "trustedPublishers", "trustedKeys"],
+  "properties": {
+    "requireSigned": { "type": "boolean", "default": true },
+    "allow": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$" }
+    },
+    "trustedPublishers": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,63}$" }
+    },
+    "trustedKeys": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "propertyNames": { "pattern": "^ed25519:[A-Za-z0-9._:-]{3,127}$" }
+    }
+  }
+}
