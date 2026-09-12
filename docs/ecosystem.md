@@ -22,6 +22,8 @@ Steward can operate completely independently. Consumers may use its `steward` or
 
 FORGE may invoke Steward when repository health or safe maintenance is relevant. StackPilot may consume Steward's scan result observationally. Neither integration requires private module imports or makes Steward a runtime dependency.
 
+The three products are intentionally connected through public contracts rather than shared private implementation.
+
 ## Public release
 
 - [Steward repository](https://github.com/gODtECH-Ctl-Create/gODtECH-Steward)
