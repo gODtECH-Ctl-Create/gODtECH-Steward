@@ -29,3 +29,15 @@ test("documentation rule detects broken local Markdown links", async () => {
   assert.ok(finding);
   assert.equal(finding?.category, "documentation");
 });
+
+test("maintenance rule detects unresolved merge markers and groups TODO/FIXME markers per file", async () => {
+  const root = await fixture();
+  await writeFile(join(root, "README.md"), "# Example\n", "utf8");
+  await writeFile(join(root, ".gitignore"), ".env\n.env.*\nnode_modules/\n", "utf8");
+  await writeFile(join(root, "conflict.ts"), "<<<<<<< HEAD\nconst value = 1;\n=======\nconst value = 2;\n>>>>>>> branch\n// TODO: reconcile\n// FIXME: test this\n", "utf8");
+  const result = await scanRepository(root);
+  assert.equal(result.findings.some((finding) => finding.rule === "merge-conflict-marker"), true);
+  const todo = result.findings.find((finding) => finding.rule === "todo-fixme");
+  assert.ok(todo);
+  assert.match(todo?.message ?? "", /2 TODO\/FIXME/);
+});
