@@ -1,4 +1,4 @@
-import { generateKeyPairSync, sign } from "node:crypto";
+import { createHash, generateKeyPairSync, sign } from "node:crypto";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -37,7 +37,7 @@ async function createSignedPack(root: string): Promise<{ manifestPath: string; a
     compatibility: { ruleApi: 1, resultSchema: 1 },
     artifact: {
       format: "wasm",
-      sha256: (await import("node:crypto")).createHash("sha256").update(artifact).digest("hex"),
+      sha256: createHash("sha256").update(artifact).digest("hex"),
       sizeBytes: artifact.length,
       uri: "file:./pack.wasm"
     },
@@ -60,15 +60,21 @@ export async function run(): Promise<void> {
   assert.equal(verified.sizeBytes, EMPTY_WASM.length);
   assert.equal(verified.sandboxEligible, false);
 
-  await writeFile(artifactPath, Uint8Array.from([...EMPTY_WASM, 0x00]));
-  await assert.rejects(() => verifyRulePack(manifestPath, artifactPath, policy), /size mismatch/);
+  await writeFile(artifactPath, Uint8Array.from([...EMPTY_WASM.slice(0, -1), 0x01]));
+  await assert.rejects(() => verifyRulePack(manifestPath, artifactPath, policy), /SHA-256 mismatch/);
+
+  await writeFile(artifactPath, EMPTY_WASM);
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as { signature: { value: string } };
+  manifest.signature.value = `${manifest.signature.value.slice(0, -2)}AA`;
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n", "utf8");
+  await assert.rejects(() => verifyRulePack(manifestPath, artifactPath, policy), /signature verification failed/);
 
   await assert.rejects(
     () => verifyRulePack(manifestPath, join(root, "missing.wasm"), policy),
     /ENOENT|no such file/i
   );
 
-  await writeFile(artifactPath, EMPTY_WASM);
+  await writeFile(manifestPath, JSON.stringify(JSON.parse(await readFile(manifestPath, "utf8")) as object, null, 2) + "\n", "utf8");
   const untrusted = { ...policy, trustedPublishers: ["other-org"] };
   await assert.rejects(() => verifyRulePack(manifestPath, artifactPath, untrusted), /publisher is not trusted/);
 
