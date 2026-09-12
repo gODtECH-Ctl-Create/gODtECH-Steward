@@ -21,14 +21,16 @@ Steward is not a second orchestration framework, project scaffolder, or autonomo
 - [x] Built-in versioned rule packs with pack-level and rule-level policy.
 - [x] Reproducible package installation with a committed npm lockfile and `npm ci` verification.
 - [x] Stable finding fingerprints and deterministic before/after health deltas.
+- [x] Project metadata checks for package identity and publishable-package completeness.
+- [x] Expanded tracking detection for high-confidence generated test/tool artifacts.
 
 ## Near-term priorities
 
-- [ ] Broader deterministic repository analysis where the evidence is provable and the scope is justified.
 - [ ] Trusted external rule-pack distribution with explicit compatibility and safety rules.
 - [ ] Forge adapter using the public result contract.
 - [ ] Optional StackPilot adapter for generic maintenance signals.
 - [ ] Release-grade package distribution, signing, and artifact provenance.
+- [ ] Additional deterministic health checks where evidence is strong and false-positive cost is low.
 
 ## Rule-pack architecture
 
@@ -37,18 +39,31 @@ Rule packs are the canonical extension boundary for Steward's own analyzers. Bui
 Current built-in packs:
 
 ```text
-core@1
+core@2
   repository
   documentation
   dependencies
   maintenance
+  metadata
   hygiene
 
 security@1
   security
 ```
 
-A generic housekeeping capability belongs here rather than being copied into Forge or StackPilot.
+The `core` pack was bumped from version 1 to version 2 because the rule inventory changed. Consumers can therefore distinguish the expanded deterministic health baseline from the previous pack behavior.
+
+## Deterministic health expansion
+
+The current core expansion focuses on evidence with low speculation:
+
+- package project identity and description checks;
+- version/license completeness for non-private packages;
+- tracked coverage and test-report artifacts;
+- tracked test/tool output directories;
+- common local build caches, TypeScript build-info files, and lint caches.
+
+Steward deliberately does not treat generic `dist/` or `build/` directories as disposable because some projects intentionally ship compiled output.
 
 ## Scan evidence and deltas
 
