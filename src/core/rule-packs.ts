@@ -3,6 +3,7 @@ import { dependenciesRule } from "../rules/dependencies.js";
 import { documentationRule } from "../rules/documentation.js";
 import { hygieneRule } from "../rules/hygiene.js";
 import { maintenanceRule } from "../rules/maintenance.js";
+import { metadataRule } from "../rules/metadata.js";
 import { repositoryRule } from "../rules/repository.js";
 import { securityRule } from "../rules/security.js";
 
@@ -11,6 +12,7 @@ const CORE_RULES: readonly StewardRule[] = [
   documentationRule,
   dependenciesRule,
   maintenanceRule,
+  metadataRule,
   hygieneRule,
 ];
 
@@ -18,7 +20,7 @@ export const RULE_PACKS: readonly RulePack[] = [
   {
     id: "core",
     version: 1,
-    description: "Generic repository, documentation, dependency, maintenance, and hygiene checks.",
+    description: "Generic repository, documentation, dependency, maintenance, metadata, and hygiene checks.",
     rules: CORE_RULES,
   },
   {
