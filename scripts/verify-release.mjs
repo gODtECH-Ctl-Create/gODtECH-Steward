@@ -16,9 +16,9 @@ const expectedTag = process.env.RELEASE_TAG ?? `v${pkg.version}`;
 const expectedVersion = `v${pkg.version}`;
 
 assert(pkg.name === "@godtech/steward", `Unexpected package name: ${pkg.name}`);
-assert(pkg.version === "0.1.0", `Release script is locked to 0.1.0, found ${pkg.version}.`);
+assert(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(pkg.version), `Invalid semantic version: ${pkg.version}`);
 assert(expectedTag === expectedVersion, `Release tag ${expectedTag} does not match package version ${expectedVersion}.`);
-assert(pkg.license === "Apache-2.0", "Package license must remain Apache-2.0 for the first release.");
+assert(pkg.license === "Apache-2.0", "Package license must remain Apache-2.0.");
 assert(pkg.publishConfig?.access === "public", "Package publishConfig.access must be public.");
 assert(pkg.repository?.url === "https://github.com/gODtECH-Ctl-Create/gODtECH-Steward.git", "Package repository URL does not match the canonical GitHub repository.");
 assert(pkg.repository?.type === "git", "Package repository type must be git.");
