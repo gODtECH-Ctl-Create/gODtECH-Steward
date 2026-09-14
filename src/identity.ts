@@ -1,7 +1,12 @@
 import { getProduct, renderIdentity } from "@godtech/cli-identity";
 
-const stewardIdentity = getProduct("steward");
-if (!stewardIdentity) throw new Error("Missing STEWARD identity profile.");
+function requireStewardIdentity() {
+  const product = getProduct("steward");
+  if (!product) throw new Error("Missing STEWARD identity profile.");
+  return product;
+}
+
+const stewardIdentity = requireStewardIdentity();
 
 export interface StewardIdentityContext {
   isTTY?: boolean;
