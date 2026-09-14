@@ -82,17 +82,18 @@ jobs:
       - name: Verify npm publication
         env:
           PACKAGE_NAME: "@godtech/steward"
-          PACKAGE_VERSION: "0.1.0"
         run: |
           set -euo pipefail
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
           published_version="$(npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version --json | tr -d '"')"
           test "$published_version" = "$PACKAGE_VERSION"
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: "0.1.0"
         run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
           gh release create "${GITHUB_REF_NAME}" \
             "${{ steps.artifacts.outputs.tarball }}" \
             SHA256SUMS \

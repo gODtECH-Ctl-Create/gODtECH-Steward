@@ -1,6 +1,6 @@
 {
   "name": "@godtech/steward",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Deterministic software and repository housekeeping from gODtECH.",
   "type": "module",
   "bin": {
@@ -48,7 +48,7 @@
     "url": "https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/issues"
   },
   "dependencies": {
-    "@godtech/cli-identity": "git+https://github.com/gODtECH-Ctl-Create/gODtECH-CLI-Identity.git#04f117e955dce39023a824bdea83a2a3259d5f9a"
+    "@godtech/cli-identity": "git+https://github.com/gODtECH-Ctl-Create/gODtECH-CLI-Identity.git#44130ba07b907be7c1ac39d9423fac56a8aa4ffa"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
