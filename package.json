@@ -47,6 +47,9 @@
   "bugs": {
     "url": "https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/issues"
   },
+  "dependencies": {
+    "@godtech/cli-identity": "git+https://github.com/gODtECH-Ctl-Create/gODtECH-CLI-Identity.git#04f117e955dce39023a824bdea83a2a3259d5f9a"
+  },
   "devDependencies": {
     "@types/node": "^24.3.0",
     "typescript": "^5.9.2"
