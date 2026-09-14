@@ -48,7 +48,7 @@
     "url": "https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/issues"
   },
   "dependencies": {
-    "@godtech/cli-identity": "git+https://github.com/gODtECH-Ctl-Create/gODtECH-CLI-Identity.git#4cc3bcfeb9090051b426a26c9e8c5d5aed401bd5"
+    "@godtech/cli-identity": "git+https://github.com/gODtECH-Ctl-Create/gODtECH-CLI-Identity.git#44130ba07b907be7c1ac39d9423fac56a8aa4ffa"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
