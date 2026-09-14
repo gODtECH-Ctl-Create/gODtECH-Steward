@@ -1,6 +1,10 @@
 import { getProduct, renderIdentity } from "@godtech/cli-identity";
-const stewardIdentity = getProduct("steward");
-if (!stewardIdentity) throw new Error("Missing STEWARD identity profile.");
+function requireStewardIdentity() {
+  const product = getProduct("steward");
+  if (!product) throw new Error("Missing STEWARD identity profile.");
+  return product;
+}
+const stewardIdentity = requireStewardIdentity();
 export function stewardIdentityBanner(targetCols = process.stdout.columns ?? 80, unicode = process.env.STEWARD_ASCII !== "1") {
   const width = Math.max(40, Math.min(128, Math.floor(targetCols)));
   return renderIdentity(stewardIdentity, { targetCols: width, unicode });
