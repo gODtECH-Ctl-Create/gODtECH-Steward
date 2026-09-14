@@ -57,10 +57,14 @@ try {
     "action-runner.cjs",
     "schemas/steward-result.schema.json",
     "schemas/steward-forge-evidence.schema.json",
+    "schemas/steward-external-rule-api.schema.json",
     "dist/src/cli.js",
     "dist/src/core/scanner.js",
     "dist/src/core/rule-packs.js",
     "dist/src/core/forge-evidence.js",
+    "dist/src/core/external-rule-api.js",
+    "dist/src/core/external-rule-runtime.js",
+    "dist/src/core/external-rule-worker.js",
     "dist/src/rules/metadata.js",
   ];
   for (const entry of required) assert(normalised.includes(entry), `Package is missing required entry: ${entry}`);
