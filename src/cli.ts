@@ -12,6 +12,7 @@ import { hasCiFailure, formatSummary, toJson, toText } from "./core/report.js";
 import { applySafeFixes } from "./rules/hygiene.js";
 import { verifyRulePack } from "./core/trust.js";
 import { probeWasmSandbox } from "./core/wasm-sandbox.js";
+import { printStewardIdentity, shouldShowStewardIdentity } from "./identity.js";
 import type { Severity } from "./core/types.js";
 
 async function packageVersion(): Promise<string> {
@@ -136,6 +137,8 @@ async function verifyPackCommand(args: string[]): Promise<void> {
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
+  if (shouldShowStewardIdentity(args)) printStewardIdentity();
+
   const command = args[0] ?? "help";
   if (command === "--version" || command === "-v") {
     console.log(await packageVersion());
