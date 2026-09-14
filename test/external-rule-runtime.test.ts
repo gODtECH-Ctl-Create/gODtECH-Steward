@@ -56,6 +56,7 @@ interface ModuleOptions {
   mode?: "constant" | "infinite" | "grow";
   growPages?: number;
   withImport?: boolean;
+  returnedPointer?: number;
 }
 
 function makeModule(outputJson: string, options: ModuleOptions = {}): Uint8Array {
@@ -64,8 +65,9 @@ function makeModule(outputJson: string, options: ModuleOptions = {}): Uint8Array
   const mode = options.mode ?? "constant";
   const withImport = options.withImport ?? false;
   const output = [...encoder.encode(outputJson)];
-  const outputPointer = 4096;
-  const packed = (BigInt(outputPointer) << 32n) | BigInt(output.length);
+  const dataPointer = 4096;
+  const returnedPointer = options.returnedPointer ?? dataPointer;
+  const packed = (BigInt(returnedPointer) << 32n) | BigInt(output.length);
 
   const types = section(1, [
     ...u32(2),
@@ -105,7 +107,7 @@ function makeModule(outputJson: string, options: ModuleOptions = {}): Uint8Array
   const data = section(11, [
     ...u32(1),
     0x00,
-    0x41, ...s64(BigInt(outputPointer)), 0x0b,
+    0x41, ...s64(BigInt(dataPointer)), 0x0b,
     ...u32(output.length),
     ...output
   ]);
@@ -175,6 +177,15 @@ export async function run(): Promise<void> {
   assert.equal(grown.metrics.memoryInitialBytes, 64 * 1024);
   assert.equal(grown.metrics.memoryFinalBytes, 2 * 64 * 1024);
 
+  const deniedGrowth = await executeExternalRule(makeModule(emptyOutput, { mode: "grow", growPages: 100 }), input, baseLimits);
+  assert.equal(deniedGrowth.metrics.memoryInitialBytes, 64 * 1024);
+  assert.equal(deniedGrowth.metrics.memoryFinalBytes, 64 * 1024);
+
+  await assert.rejects(
+    () => executeExternalRule(makeModule(emptyOutput, { returnedPointer: 65530 }), input, baseLimits),
+    /Output range is outside WebAssembly linear memory/
+  );
+
   await assert.rejects(
     () => executeExternalRule(makeModule(emptyOutput, { mode: "infinite" }), input, { ...baseLimits, maxExecutionMs: 500 }),
     /execution exceeded 500ms/
@@ -204,7 +215,11 @@ export async function run(): Promise<void> {
   );
 
   await assert.rejects(
-    () => executeExternalRule(safeModule, { ...input, repository: { files: [{ path: "large.txt", sizeBytes: 100, isText: true, tracked: false, content: "x".repeat(200) }] } }, { ...baseLimits, maxInputBytes: 64 }),
+    () => executeExternalRule(
+      safeModule,
+      { ...input, repository: { files: [{ path: "large.txt", sizeBytes: 100, isText: true, tracked: false, content: "x".repeat(200) }] } },
+      { ...baseLimits, maxInputBytes: 64 }
+    ),
     /input exceeds configured maximum/
   );
 }
