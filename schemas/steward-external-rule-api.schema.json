@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://godtech.dev/schemas/steward-external-rule-api.schema.json",
+  "title": "gODtECH Steward External Rule API v1",
+  "oneOf": [
+    { "$ref": "#/$defs/input" },
+    { "$ref": "#/$defs/output" }
+  ],
+  "$defs": {
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sizeBytes", "isText", "tracked"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$)).+$"
+        },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "isText": { "type": "boolean" },
+        "tracked": { "type": "boolean" },
+        "content": { "type": "string" }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["abiVersion", "kind", "repository"],
+      "properties": {
+        "abiVersion": { "const": 1 },
+        "kind": { "const": "steward-rule-input" },
+        "repository": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["files"],
+          "properties": {
+            "branch": { "type": "string" },
+            "commit": { "type": "string" },
+            "dirty": { "type": "boolean" },
+            "files": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/file" }
+            }
+          }
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "category", "severity", "message", "confidence"],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$"
+        },
+        "category": {
+          "enum": ["repository", "security", "documentation", "code", "dependencies", "git", "configuration"]
+        },
+        "severity": {
+          "enum": ["critical", "high", "medium", "low", "info"]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$)).+$"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000000
+        },
+        "confidence": {
+          "enum": ["high", "medium", "low"]
+        },
+        "remediation": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["abiVersion", "kind", "findings"],
+      "properties": {
+        "abiVersion": { "const": 1 },
+        "kind": { "const": "steward-rule-output" },
+        "findings": {
+          "type": "array",
+          "maxItems": 5000,
+          "items": { "$ref": "#/$defs/finding" }
+        }
+      }
+    }
+  }
+}
