@@ -2,7 +2,7 @@
 
 This document defines the first execution contract for future trusted external gODtECH Steward rule packs.
 
-The contract is intentionally **not enabled for normal scan execution yet**. Steward v0.1.x continues to verify external packs without executing them until the runtime accounting, adversarial testing, audit, provenance, revocation, and explicit enablement gates are complete.
+The contract is intentionally **not enabled for normal scan execution yet**. Steward v0.1.x continues to verify external packs without executing them until the audit, provenance, revocation, and explicit enablement gates are complete.
 
 ## Design goal
 
@@ -45,9 +45,9 @@ The `i64` result uses the high 32 bits for the unsigned output pointer and the l
 result = (output_ptr << 32) | output_len
 ```
 
-Steward must validate all pointers and lengths against the module's current linear-memory bounds before reading output bytes.
+Steward validates all pointers and lengths against the module's current linear-memory bounds before reading or writing bytes.
 
-No imports are permitted in ABI v1. A module that declares any import is not structurally eligible for execution.
+No imports are permitted in ABI v1. A module that declares any import is not eligible for execution.
 
 ## Input contract
 
@@ -74,7 +74,7 @@ Files are sorted by repository-relative path for deterministic input. The snapsh
 - whether the path is Git-tracked;
 - `content` only when Steward's normal collection policy has admitted text content.
 
-The snapshot is derived from Steward's existing repository collector, so configured exclusions and collection limits remain authoritative. Aggregate execution-input limits are a separate runtime gate and are not enabled by this contract alone.
+The snapshot is derived from Steward's existing repository collector, so configured exclusions and collection limits remain authoritative. The runtime also applies an aggregate serialized-input byte limit before starting a worker.
 
 ## Output contract
 
@@ -106,11 +106,33 @@ Steward validates external output fail-closed before accepting it. Validation in
 - valid rule identifiers;
 - known category, severity, and confidence values;
 - bounded finding count;
+- bounded serialized output bytes;
 - bounded message/remediation fields;
 - safe repository-relative paths only;
 - bounded positive line numbers.
 
 External findings do not carry remediation authority. A pack may provide explanatory remediation text, but it cannot mark a finding as automatically fixable or invoke Steward's safe-fix machinery.
+
+## Runtime guard model
+
+`src/core/external-rule-runtime.ts` and `src/core/external-rule-worker.ts` provide a security-gated execution harness for testing the ABI without wiring external execution into normal scans.
+
+Admission and execution are fail-closed:
+
+1. The artifact must use one defined 32-bit WebAssembly linear memory with an explicit maximum.
+2. The declared memory maximum must be less than or equal to the configured `maxMemoryMiB` limit.
+3. Serialized input must fit the host input-byte ceiling.
+4. Compilation and execution occur in an isolated worker with a hard wall-clock timeout.
+5. The worker rejects every WebAssembly import before instantiation.
+6. Memory size is checked before allocation, after allocation, and after `steward_run`.
+7. Input and output pointers/lengths are validated against the module's current linear-memory bounds.
+8. Output length is rejected before bytes are copied when it exceeds the configured ceiling.
+9. Returned bytes must decode as valid UTF-8 JSON and pass the strict external-result contract.
+10. Findings remain bounded by the manifest's `maxFindings` limit.
+
+Requiring an explicit WebAssembly memory maximum is important: it makes `memory.grow` intrinsically unable to exceed the admitted ceiling. Worker termination protects the parent process from non-terminating rule code.
+
+The adversarial test suite exercises unbounded memory declarations, over-limit memory declarations, forbidden imports, memory growth, infinite loops, oversized input/output, malformed JSON, and excessive findings.
 
 ## Capability boundary
 
@@ -132,12 +154,18 @@ Any future capability expansion requires a new reviewed contract. It must not be
 
 ## Current implementation boundary
 
-`src/core/external-rule-api.ts` currently provides:
+The implementation now provides:
 
 - deterministic snapshot construction;
 - strict result parsing and validation;
-- structural WebAssembly inspection for the required exports and zero-import rule.
+- structural WebAssembly inspection for the required exports and zero-import rule;
+- bounded linear-memory admission;
+- isolated worker execution with wall-clock termination;
+- input/output byte ceilings;
+- pointer/range validation;
+- adversarial runtime coverage;
+- npm distribution verification for the runtime and worker artifacts.
 
-This does **not** enable external rule execution. The current `steward pack verify` command remains verification-only and reports `executionEnabled: false`.
+This still does **not** enable external rule execution in `scan`, the GitHub Action, or any automatic workflow. The current `steward pack verify` command remains verification-only and reports `executionEnabled: false`.
 
-Execution stays disabled until the follow-up security gates tracked from issue #24 are complete, including bounded memory/time/output accounting, adversarial packs, structured audit evidence, provenance, publisher/key revocation, and explicit policy enablement.
+Execution stays disabled until the remaining security gates tracked from issue #24 are complete, including structured audit evidence, artifact provenance policy, publisher/key revocation, explicit execution enablement, compatibility/rollback behavior, and end-to-end denial tests.

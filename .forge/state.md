@@ -1,11 +1,11 @@
 # gODtECH Steward state
 
 ## Current stage
-PUBLIC RELEASE + PRODUCT PRESENTATION
+PUBLIC RELEASE + TRUSTED PACK EXECUTION HARDENING
 
 ## Current baseline
 
-Steward has a deterministic scan engine, first-class rule contracts, versioned machine-readable reporting, repository-owned configuration, conservative safe remediation, a composite GitHub Action, a reproducible npm installation path, stable finding fingerprints, before/after health deltas, expanded deterministic repository-health coverage, consumer-style package verification, a privacy-safe gODtECH FORGE evidence adapter, a documented StackPilot integration contract, trusted external rule-pack verification, and a conservative WebAssembly (WASM) sandbox probe.
+Steward has a deterministic scan engine, first-class rule contracts, versioned machine-readable reporting, repository-owned configuration, conservative safe remediation, a composite GitHub Action, a reproducible npm installation path, stable finding fingerprints, before/after health deltas, expanded deterministic repository-health coverage, consumer-style package verification, a privacy-safe gODtECH FORGE evidence adapter, a documented StackPilot integration contract, trusted external rule-pack verification, a versioned no-import external rule ABI, and a security-gated WebAssembly (WASM) runtime harness with bounded resources and adversarial tests.
 
 ## Active rule packs
 
@@ -36,7 +36,7 @@ StackPilot consumes Steward's public scan contract optionally and observationall
 
 The package manifest ships the consumer-facing compiled engine under `dist/src`, schemas, README, license, and GitHub Action runner files. Development TypeScript source and `node_modules` are not included.
 
-`npm run verify:package` builds and inspects the actual npm tarball, installs it offline into a clean consumer directory, exercises both CLI aliases, validates the scan contract, exercises `forge-evidence`, runs the packaged Action runner, and rejects malformed Action argument payloads.
+`npm run verify:package` builds and inspects the actual npm tarball, installs it offline into a clean consumer directory, exercises both CLI aliases, validates the scan contract, exercises `forge-evidence`, runs the packaged Action runner, rejects malformed Action argument payloads, and verifies the external rule API/runtime/worker artifacts are present.
 
 ## Release state
 
@@ -46,20 +46,27 @@ The package manifest ships the consumer-facing compiled engine under `dist/src`,
 - Package and GitHub Release were verified after the corrected tag-driven release run.
 - Windows end-user smoke test verified `steward.cmd --version`, help, scan, JSON output, and doctor flow.
 
-## Trusted external rule-pack design
+## Trusted external rule-pack execution model
 
-The design and verification prototype are complete, but executable third-party packs remain disabled.
+Executable third-party packs remain disabled in normal scans and the GitHub Action.
 
-The accepted design requires a versioned manifest, explicit Steward rule API compatibility, SHA-256 artifact verification, trusted Ed25519 publisher signatures, repository/user allow policy, a read-only capability boundary, WebAssembly (WASM) execution, bounded resources, and audit output.
+The accepted model now includes:
+
+- versioned manifest and external rule ABI contracts;
+- SHA-256 artifact verification;
+- trusted Ed25519 publisher signatures;
+- repository/user allow policy;
+- deterministic repository-relative snapshot input;
+- no-import WASM execution boundary;
+- one defined bounded 32-bit linear memory with an explicit maximum;
+- configured memory ceiling enforcement before worker startup;
+- bounded serialized input and output;
+- isolated worker execution with a hard timeout;
+- pointer/range validation before memory reads/writes;
+- strict returned-finding validation and `maxFindings` enforcement;
+- adversarial tests for infinite loops, memory declarations/growth, forbidden imports, malformed/oversized output, and oversized input.
 
 Arbitrary JavaScript/Node.js rule execution is not an accepted trust model. External packs cannot write repositories, spawn processes, access secrets, or use network/filesystem capabilities by default. Remediation remains Steward-owned and finding-driven.
-
-## Product presentation
-
-- GitHub Pages landing page is maintained under `site/`.
-- Static Pages deployment workflow is `.github/workflows/pages.yml`.
-- Product README now links to the npm package, public release, website, install paths, ecosystem integrations, and release provenance.
-- Presentation should continue to reflect verified product behavior and must not turn prototypes into production claims.
 
 ## Verification state
 
@@ -71,15 +78,17 @@ Arbitrary JavaScript/Node.js rule execution is not an accepted trust model. Exte
 - FORGE evidence adapter merged: `c0d5d2364e7511a58fc86fb4d1e7c8ade92fbde5`.
 - StackPilot adapter completed externally via `gODtECH-Ctl-Create/StackPilot#19`.
 - Trusted rule-pack verification milestone merged and verified.
+- External rule ABI/host contract merged through PR #36; issue #33 completed.
 - Release preparation, Windows distribution fix, release cleanup, and release-workflow ordering fix merged through PRs #27-#30.
 - Public `v0.1.0` release verified successfully.
 
 ## Remaining product work
 
+- Complete #35: structured audit records, artifact provenance policy, publisher/key revocation, explicit execution enablement, compatibility/rollback behavior, and end-to-end denial tests.
+- Keep external execution disabled until #35 is complete and reviewed.
 - Improve signal quality where test fixtures or intentional documentation markers create noisy self-findings.
 - Add further deterministic health and language-aware analysis only where evidence quality justifies the added complexity.
-- Complete the full audited execution model before enabling trusted external executable packs.
 
 ## Safety boundary
 
-Scanning is read-only. Safe remediation requires explicit `--safe`, dry runs do not write, security findings are observation-only, and external executable rule packs remain disabled until the complete trust, host API, resource accounting, audit, provenance, and malicious-pack gates are satisfied.
+Scanning is read-only. Safe remediation requires explicit `--safe`, dry runs do not write, security findings are observation-only, and external executable rule packs remain disabled in normal workflows until the complete audit, provenance, revocation, and explicit enablement gate is satisfied.

@@ -27,20 +27,22 @@ Steward is not a second orchestration framework, project scaffolder, or autonomo
 - [x] Standalone gODtECH FORGE evidence adapter using the public result contract.
 - [x] StackPilot-side optional Steward report adapter and contract boundary.
 - [x] Trusted external rule-pack verification and conservative sandbox prototype.
+- [x] Versioned no-import external rule execution ABI and deterministic snapshot/result contracts.
+- [x] Security-gated WASM runtime harness with bounded memory, timeout, payload limits, and adversarial tests.
 - [x] Public npm release with tag-driven provenance and artifact attestations.
 - [x] Product landing page prepared for GitHub Pages.
 - [x] Product README redesigned around the public release and end-user installation path.
 
 ## Near-term priorities
 
+- [ ] Complete structured audit, provenance, publisher/key revocation, compatibility/rollback, and explicit execution enablement before trusted external executable rule packs can run in normal workflows.
 - [ ] Improve signal quality where intentional test fixtures or documentation markers create noisy findings.
 - [ ] Add additional deterministic health checks only where evidence is strong and false-positive cost is low.
 - [ ] Expand language-aware analysis selectively, without turning Steward into a general-purpose static analyzer.
-- [ ] Complete the audited execution model required before trusted external executable rule packs can run.
 
 ## Rule-pack architecture
 
-Rule packs are the canonical extension boundary for Steward's own analyzers. Built-in packs are versioned and selected deterministically. External executable packs remain disabled until trust, compatibility, provenance, and sandbox rules are fully satisfied.
+Rule packs are the canonical extension boundary for Steward's own analyzers. Built-in packs are versioned and selected deterministically. External executable packs remain disabled until trust, compatibility, provenance, audit, revocation, and explicit enablement rules are fully satisfied.
 
 Current built-in packs:
 
@@ -61,7 +63,7 @@ The `core` pack was bumped from version 1 to version 2 because the rule inventor
 
 ## Trusted external rule-pack design
 
-The design milestone establishes these gates before any external executable rule runs:
+The design requires these gates before any external executable rule runs in normal Steward workflows:
 
 1. Versioned manifest schema.
 2. Explicit Steward rule API compatibility.
@@ -69,16 +71,18 @@ The design milestone establishes these gates before any external executable rule
 4. Trusted publisher signature verification using Ed25519.
 5. Repository/user allow policy with fail-closed malformed configuration.
 6. Read-only capability boundary.
-7. WebAssembly (WASM) sandbox as the supported executable artifact format.
-8. Bounded memory, execution time, and finding output.
+7. WebAssembly (WASM) as the supported executable artifact format.
+8. Bounded memory, execution time, input/output bytes, and finding output.
 9. No network, arbitrary filesystem, process, environment, or secret access.
-10. Audit output for accepted and rejected external packs.
+10. Structured audit output for accepted and rejected external packs.
+11. Publisher/key revocation and provenance policy.
+12. Explicit execution enablement separate from verification.
 
 Arbitrary JavaScript/Node.js executable rule packs are not a supported trust model. Remediation remains Steward-owned and finding-driven.
 
-## Trusted verification implementation
+## Trusted verification and runtime implementation
 
-The current implementation provides a **verification-only** path:
+The verification path remains:
 
 ```text
 manifest
@@ -98,7 +102,23 @@ steward pack verify manifest.json --artifact pack.wasm
 steward pack verify manifest.json --artifact pack.wasm --sandbox --json
 ```
 
-The sandbox prototype compiles the WASM artifact, rejects modules with imports, and performs bounded worker-based instantiation so a start function cannot block the main process indefinitely. The current prototype does **not** expose the repository host API, does not execute arbitrary exported rule functions, and does not provide full runtime accounting for WASM linear memory. Therefore external executable rule packs remain disabled in repository scans and GitHub Action execution.
+The accepted external rule ABI is versioned and no-import. Steward constructs a deterministic, repository-relative JSON snapshot, exchanges bytes through module-owned linear memory, and validates returned findings fail-closed.
+
+The security-gated runtime harness additionally:
+
+- requires one defined 32-bit linear memory with an explicit maximum;
+- rejects a declared maximum above the configured memory ceiling;
+- rejects oversized serialized input before worker startup;
+- compiles and executes inside an isolated worker with a hard timeout;
+- rejects all WASM imports before instantiation;
+- validates memory size before/after allocation and execution;
+- validates input/output pointer ranges;
+- rejects oversized output before copying bytes;
+- validates UTF-8 JSON and the external-result contract;
+- enforces `maxFindings`;
+- is exercised with adversarial executable fixtures.
+
+This harness is deliberately **not wired into `scan` or the GitHub Action**. External executable packs remain disabled until the audit/provenance/revocation/enablement gate is complete.
 
 Unsigned verification can be represented by policy, but the default policy requires signatures. Signed mode requires an explicit trusted Ed25519 public key for the declared publisher key ID. Malformed trust configuration fails closed for pack verification.
 
@@ -136,7 +156,7 @@ StackPilot may consume Steward's `schemaVersion: 1` scan result as an optional o
 
 The distribution gate builds the actual npm tarball, inspects the published file set, installs it into a clean consumer directory without registry access, executes both CLI aliases, validates the versioned JSON output, exercises `forge-evidence`, runs the packaged GitHub Action, and rejects malformed Action argument payloads.
 
-The package intentionally excludes the TypeScript source tree and `node_modules` while shipping the compiled engine required by both package consumers and the Action runner.
+The package intentionally excludes the TypeScript source tree and `node_modules` while shipping the compiled engine required by package consumers, the Action runner, and the external-rule runtime worker.
 
 ## Release line
 
