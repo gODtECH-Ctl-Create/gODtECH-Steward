@@ -4,7 +4,7 @@ External rule packs are an opt-in extension point for gODtECH Steward. Built-in 
 
 External packs are **analysis-only**. They may inspect the deterministic repository snapshot Steward deliberately provides and emit findings. They may not mutate repositories, spawn processes, access secrets or ambient environment state, use the network, or invoke Steward remediation.
 
-The supported executable artifact format is WebAssembly (WASM). Arbitrary JavaScript or Node.js executable plugins are intentionally outside the trust model.
+The supported executable artifact format is WebAssembly (WASM). arbitrary JavaScript or Node.js executable plugins are intentionally outside the trust model.
 
 ## Trust and execution are separate decisions
 
