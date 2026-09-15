@@ -6,11 +6,18 @@
 
 - Security-gated external rule runtime harness with bounded WebAssembly linear memory, execution timeout, input/output byte ceilings, pointer/range validation, and isolated worker execution.
 - Adversarial executable-pack tests covering bounded-memory declarations, memory growth attempts, infinite loops, forbidden imports, invalid output pointers, oversized payloads, malformed JSON, and excessive findings.
+- Structured external-pack audit records with a public `steward-external-pack-audit.schema.json` contract.
+- Publisher and signing-key revocation policy for external packs.
+- Signed pack provenance metadata and trusted source-repository admission policy.
+- Explicit external-pack execution-policy switch with exact version and SHA-256 pins for controlled upgrades and rollback.
+- `steward pack verify --audit-output <file>` for persistent accepted/rejected governance evidence.
 
 ### Changed
 
-- External executable rule packs remain disabled in normal scans and GitHub Action execution while the remaining governance/admission gate is completed.
-- Distribution verification now also checks that the external rule API/runtime/worker artifacts are present in the packaged npm archive.
+- Distribution verification now also checks that the external rule API/runtime/worker/governance artifacts and governance schemas are present in the packaged npm archive.
+- External pack verification and execution admission are separate decisions; verification alone never enables execution.
+- Execution admission fails closed for revoked publishers/keys, missing or untrusted provenance, missing pins, version changes, and artifact-digest changes.
+- External executable rule packs remain disabled in normal scans and GitHub Action execution; the governance layer is an admission contract for any future opt-in execution surface.
 
 ## 0.1.1 — 2026-09-14
 

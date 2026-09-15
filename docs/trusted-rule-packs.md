@@ -1,52 +1,58 @@
 # Trusted external rule packs
 
-External rule packs are a future extension point for gODtECH Steward. This document defines the security and compatibility boundary before any executable third-party pack is allowed to run.
+External rule packs are an opt-in extension point for gODtECH Steward. Built-in rules remain the default and Steward remains fully useful without third-party executable packs.
 
-## Core decision
+External packs are analysis-only. They may inspect the deterministic repository snapshot Steward deliberately provides and emit findings. They may not mutate repositories, spawn processes, access secrets or ambient environment state, use the network, or invoke Steward remediation.
 
-Steward must remain useful without external packs. Built-in packs stay the default, and external packs are opt-in.
+The supported executable artifact format is WebAssembly (WASM). Arbitrary JavaScript or Node.js executable plugins are intentionally outside the trust model.
 
-External packs are **analysis-only**. A pack may inspect repository facts exposed by Steward, emit findings, and declare deterministic resource limits. A pack may not mutate the repository, execute arbitrary child processes, access secrets, or invoke Steward remediation.
+## Trust and execution are separate decisions
 
-The first supported executable artifact format should be **WebAssembly (WASM)** with an explicit capability-limited host interface. Loading arbitrary JavaScript or Node.js packages as trusted rule code is intentionally out of scope.
+A pack can be **verified** without being **execution-admitted**.
 
-## Trust model
+Verification proves the artifact and publisher facts that Steward can check. Execution admission is a separate repository/user policy decision and defaults to disabled.
 
-A pack is eligible to progress toward execution only when all checks pass:
-
-1. The manifest validates against the versioned rule-pack manifest schema.
-2. The declared Steward rule API is compatible with the installed Steward version.
-3. The artifact digest matches the manifest's SHA-256 digest.
-4. The manifest has a valid signature from a configured trusted publisher key.
-5. The pack identifier is permitted by repository/user policy.
-6. The requested capabilities are allowed. The default capability set is read-only repository facts with no network, process, environment, or write access.
-7. Runtime limits are present and within Steward's allowed maximums.
-8. The WASM module passes the sandbox admission probe.
-
-Unsigned, unverifiable, incompatible, or disallowed packs must fail closed before execution.
-
-## Current implementation status
-
-Steward currently provides **verification and sandbox admission tooling only**. External packs are **not loaded by normal scans or the GitHub Action**.
-
-The CLI surface is:
-
-```bash
-steward pack verify manifest.json --artifact pack.wasm
-steward pack verify manifest.json --artifact pack.wasm --sandbox --json
+```text
+manifest + artifact
+      |
+      v
+verification
+  allowlist
+  publisher trust
+  publisher/key revocation
+  API compatibility
+  SHA-256 integrity
+  Ed25519 signature
+  WASM validity
+      |
+      v
+verified pack
+      |
+      v
+execution governance
+  explicit execution.enabled=true
+  signed provenance present
+  trusted source repository
+  exact pack version pin
+  exact artifact SHA-256 pin
+      |
+      v
+governance-admitted pack
+      |
+      v
+bounded WASM runtime gate
 ```
 
-This implementation verifies identity, policy, compatibility, SHA-256 integrity, Ed25519 signature, and WASM validity. The optional sandbox probe rejects imported host capabilities and performs bounded worker-based module instantiation.
+Normal `steward scan` and the GitHub Action still do not automatically execute external packs. The governance layer establishes the safe admission contract before any future opt-in execution surface is enabled.
 
-The probe is intentionally a prototype. It does not yet expose the repository host API, invoke arbitrary exported rule functions, or provide complete runtime accounting for WASM linear memory. Those gaps are release blockers for actual third-party rule execution.
+## Manifest and signed provenance
 
-## Manifest
+The manifest schema is [`../schemas/steward-rule-pack-manifest.schema.json`](../schemas/steward-rule-pack-manifest.schema.json).
 
-The public manifest is versioned independently from the scan result contract.
+A pack may verify without provenance, but it cannot be execution-admitted without provenance metadata covered by the publisher signature:
 
 ```json
 {
-  "$schema": "https://gODtECH-Ctl-Create.github.io/gODtECH-Steward/schemas/steward-rule-pack-manifest.schema.json",
   "schemaVersion": 1,
   "kind": "steward-rule-pack",
   "id": "example.security-hygiene",
@@ -63,11 +69,14 @@ The public manifest is versioned independently from the scan result contract.
     "format": "wasm",
     "sha256": "<64-hex-digest>",
     "sizeBytes": 123456,
-    "uri": "<registry-or-file-reference>"
+    "uri": "file:./pack.wasm"
   },
-  "capabilities": [
-    "repository.read"
-  ],
+  "provenance": {
+    "sourceRepository": "https://github.com/example-org/security-hygiene",
+    "sourceCommit": "0123456789abcdef0123456789abcdef01234567",
+    "builder": "github-actions/example-org/security-hygiene"
+  },
+  "capabilities": ["repository.read"],
   "limits": {
     "maxExecutionMs": 1000,
     "maxMemoryMiB": 64,
@@ -80,49 +89,11 @@ The public manifest is versioned independently from the scan result contract.
 }
 ```
 
-The schema requires stable identity, compatibility, artifact integrity, declared capabilities, bounded resources, and signature metadata. The exact registry transport remains unspecified until the verification model is fully released.
+The signature covers the manifest content other than the signature field itself, including provenance. Steward therefore treats provenance as a publisher-attested build statement, not an unsigned comment.
 
-## Capability boundary
+## Repository/user policy
 
-The initial host API is intentionally narrow:
-
-```text
-repository.read
-  repository metadata
-  bounded file metadata/content already collected by Steward
-  tracked-file facts
-  Git facts
-```
-
-Never grant an external rule pack by default:
-
-```text
-network
-process.exec
-filesystem.write
-filesystem.arbitrary
-environment.read
-secrets.read
-credential-store.read
-```
-
-A rule pack also cannot write a file through the host API. Remediation remains a Steward-owned, finding-driven capability.
-
-## Version negotiation
-
-There are three independent versions:
-
-- `schemaVersion`: the manifest format itself;
-- `ruleApi`: the host interface available to the pack;
-- `resultSchema`: the finding/result contract expected from Steward.
-
-A pack must declare exact compatible versions or explicit supported ranges. Steward must reject ambiguous compatibility declarations rather than guessing.
-
-Built-in pack versions such as `core@2` remain separate from the external manifest version.
-
-## Policy
-
-Repository-owned configuration controls admission:
+The policy schema is [`../schemas/steward-external-pack-policy.schema.json`](../schemas/steward-external-pack-policy.schema.json).
 
 ```json
 {
@@ -132,54 +103,120 @@ Repository-owned configuration controls admission:
     "trustedPublishers": ["example-org"],
     "trustedKeys": {
       "ed25519:example-key-1": "-----BEGIN PUBLIC KEY-----..."
+    },
+    "revokedPublishers": [],
+    "revokedKeys": [],
+    "execution": {
+      "enabled": true,
+      "trustedSourceRepositories": [
+        "https://github.com/example-org/security-hygiene"
+      ],
+      "pins": {
+        "example.security-hygiene": {
+          "version": "1.2.0",
+          "sha256": "<64-hex-digest>"
+        }
+      }
     }
   }
 }
 ```
 
-The policy is opt-in and fails closed when malformed. The default configuration contains no allowed external packs and no trusted publishers.
+Execution defaults to `false`. Enabling execution requires signed packs, at least one trusted source repository, and at least one explicit version/digest pin. Malformed configuration fails closed.
 
-The policy schema is [`../schemas/steward-external-pack-policy.schema.json`](../schemas/steward-external-pack-policy.schema.json).
+Verification does not imply execution. A verified pack still receives an `execution_disabled`, provenance, source-trust, or pin-related denial unless every execution policy gate passes.
 
-## Supply-chain requirements
+## Revocation
 
-Before an external pack can execute in a release build, Steward needs:
+`revokedPublishers` and `revokedKeys` override allowlists and trust configuration.
 
-- signed manifest verification;
-- artifact hash verification;
-- immutable version identity;
-- publisher-key rotation and revocation rules;
-- compatibility enforcement;
-- reproducible packaging where practical;
-- provenance information for the artifact build;
-- explicit offline behavior when registry access is unavailable;
-- audit output showing which external packs were accepted or rejected and why;
-- full malicious-pack and resource-exhaustion test coverage.
+A publisher or signing key present in a revocation list is rejected before execution admission even if it is also present in `trustedPublishers` or `trustedKeys`.
 
-A future registry must not silently replace an already accepted artifact.
+Recommended incident response for a compromised pack or key:
 
-## Execution safety
+1. Add the publisher or key ID to the appropriate revocation list.
+2. Disable `externalPacks.execution.enabled` while the incident is investigated.
+3. Remove or replace affected execution pins.
+4. Re-run `steward pack verify` and preserve the generated audit record.
+5. Rotate the publisher key and review provenance before re-enabling execution admission.
 
-External execution must happen in a sandbox with:
+## Compatibility and rollback
 
-- no network by default;
-- no arbitrary filesystem access;
-- no process spawning;
-- bounded memory and execution time;
-- bounded output/findings;
-- deterministic host inputs;
-- no access to raw secret values.
+Manifest compatibility is exact and fail-closed for the current rule API and result schema. Steward does not guess compatibility across rule API changes.
 
-A failed pack must degrade to a finding about the pack execution problem. It must not terminate unrelated built-in rules or mutate repository state.
+Execution pins make upgrades and rollbacks explicit:
 
-## Rollout order
+- an unpinned pack is never execution-admitted;
+- a different pack version is denied with `pin_version_mismatch`;
+- a different artifact digest is denied with `pin_digest_mismatch`;
+- rollback means deliberately changing the pin to a previously reviewed version and its known SHA-256 digest;
+- a Steward or rule-API upgrade that makes an older pack incompatible causes verification to fail before execution admission.
 
-1. Manifest schema and compatibility tests. **Complete.**
-2. Trust-policy configuration model. **Complete.**
-3. Signature and digest verification. **Complete as verification-only tooling.**
-4. WASM host interface and sandbox prototype. **Admission prototype complete; host API and full resource enforcement remain.**
-5. Consumer-style tests with malicious/invalid packs. **In progress.**
-6. Documentation and audit output. **In progress.**
-7. Only then consider a public registry or third-party pack publishing workflow.
+This prevents a registry, local replacement, or compromised publisher from silently swapping a previously reviewed artifact.
 
-Until the remaining gates are complete, Steward must continue to reject arbitrary external executable rule packs during normal scans and GitHub Action execution.
+## Audit records
+
+`steward pack verify` emits governance information in JSON output and can persist a standalone structured audit record:
+
+```bash
+steward pack verify manifest.json --artifact pack.wasm --json
+steward pack verify manifest.json --artifact pack.wasm --audit-output steward-pack-audit.json
+```
+
+The audit contract is [`../schemas/steward-external-pack-audit.schema.json`](../schemas/steward-external-pack-audit.schema.json).
+
+Audit records include:
+
+- pack ID and version;
+- publisher ID and key ID;
+- artifact format and SHA-256 digest;
+- rule API and result schema versions;
+- signed provenance identity when present;
+- verification acceptance/rejection and a stable reason code;
+- execution-policy request state and admission decision.
+
+Audit records intentionally exclude trusted public-key contents, repository secret values, and local artifact paths.
+
+## Capability boundary
+
+ABI v1 grants only the repository facts Steward deliberately serializes into the deterministic snapshot.
+
+It does not grant:
+
+```text
+network
+process.exec
+filesystem.write
+filesystem.arbitrary
+environment.read
+secrets.read
+credential-store.read
+Git mutation
+Steward remediation
+```
+
+The accepted external rule ABI is no-import. A module cannot smuggle new host capabilities into ABI v1 through WebAssembly imports.
+
+## Runtime safety
+
+The security-gated runtime harness from the #34 milestone enforces:
+
+- one defined bounded 32-bit linear memory with an explicit maximum;
+- configured memory ceilings;
+- bounded serialized input and output;
+- isolated worker execution;
+- hard wall-clock timeout;
+- pointer and memory-range validation;
+- strict UTF-8/JSON result parsing;
+- `maxFindings` enforcement;
+- fail-closed handling of malformed and adversarial modules.
+
+Adversarial fixtures cover infinite loops, memory growth attempts, missing memory bounds, forbidden imports, invalid pointers, malformed JSON, oversized input/output, and excessive findings.
+
+## Current rollout status
+
+The trusted-pack security chain now has distinct layers for verification, ABI/runtime safety, and governance admission.
+
+Normal repository scans and the GitHub Action still do not automatically run third-party executable packs. Any future execution surface must consume the same verified pack, governance decision, audit contract, and bounded runtime rather than bypassing them.
+
+A public marketplace/registry and automatic remote pack download/update remain out of scope.

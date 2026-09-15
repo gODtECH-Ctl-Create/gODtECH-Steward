@@ -10,7 +10,7 @@ import { calculateScanDelta, isScanResult } from "./core/delta.js";
 import { toForgeEvidenceJson } from "./core/forge-evidence.js";
 import { hasCiFailure, formatSummary, toJson, toText } from "./core/report.js";
 import { applySafeFixes } from "./rules/hygiene.js";
-import { verifyRulePack } from "./core/trust.js";
+import { evaluateExternalPack } from "./core/external-pack-governance.js";
 import { probeWasmSandbox } from "./core/wasm-sandbox.js";
 import { printStewardIdentity, shouldShowStewardIdentity } from "./identity.js";
 import type { Severity } from "./core/types.js";
@@ -35,7 +35,7 @@ Usage:
   steward forge-evidence [path] [--output <file>] [--compare <report>]
   steward rules [path]
   steward fix [path] --safe [--dry-run]
-  steward pack verify <manifest> --artifact <file> [--sandbox] [--json]
+  steward pack verify <manifest> --artifact <file> [--sandbox] [--json] [--audit-output <file>]
   steward --version
 `;
 }
@@ -88,16 +88,35 @@ async function readPreviousReport(root: string, reportPath: string): Promise<Awa
 }
 
 async function verifyPackCommand(args: string[]): Promise<void> {
-  if (args[1] !== "verify") throw new Error("pack supports only: verify <manifest> --artifact <file> [--sandbox] [--json]");
+  if (args[1] !== "verify") throw new Error("pack supports only: verify <manifest> --artifact <file> [--sandbox] [--json] [--audit-output <file>]");
   const manifestPath = args[2];
   const artifactPath = option(args, "--artifact");
+  const auditOutput = option(args, "--audit-output");
   if (!manifestPath || !artifactPath) throw new Error("pack verify requires <manifest> and --artifact <file>.");
 
   const root = resolve(".");
   const configResult = await loadConfig(root);
   if (configResult.warning) throw new Error(`Refusing external pack verification because .steward.json is invalid: ${configResult.warning}`);
 
-  const verified = await verifyRulePack(manifestPath, artifactPath, configResult.config.externalPacks);
+  const evaluation = await evaluateExternalPack(manifestPath, artifactPath, configResult.config.externalPacks);
+  if (auditOutput) {
+    await writeFile(resolve(root, auditOutput), JSON.stringify(evaluation.audit, null, 2) + "\n", "utf8");
+  }
+
+  if (!evaluation.verified) {
+    if (args.includes("--json")) {
+      console.log(JSON.stringify({
+        verified: false,
+        executionEnabled: false,
+        executionPolicyEnabled: configResult.config.externalPacks.execution.enabled,
+        executionAdmitted: false,
+        audit: evaluation.audit
+      }, null, 2));
+    }
+    throw evaluation.failure ?? new Error("External rule-pack verification failed.");
+  }
+
+  const verified = evaluation.verified;
   let sandbox;
   if (args.includes("--sandbox")) {
     const bytes = await readFile(resolve(artifactPath));
@@ -108,6 +127,8 @@ async function verifyPackCommand(args: string[]): Promise<void> {
   const output = {
     verified: true,
     executionEnabled: false,
+    executionPolicyEnabled: configResult.config.externalPacks.execution.enabled,
+    executionAdmitted: evaluation.audit.admission.allowed,
     manifestSchemaVersion: verified.manifest.schemaVersion,
     ruleApi: verified.manifest.compatibility.ruleApi,
     resultSchema: verified.manifest.compatibility.resultSchema,
@@ -121,7 +142,8 @@ async function verifyPackCommand(args: string[]): Promise<void> {
       format: verified.manifest.artifact.format
     },
     signatureVerified: verified.signatureVerified,
-    sandbox: sandbox ?? { requested: false, eligible: verified.sandboxEligible, executed: false }
+    sandbox: sandbox ?? { requested: false, eligible: verified.sandboxEligible, executed: false },
+    audit: evaluation.audit
   };
   if (args.includes("--json")) console.log(JSON.stringify(output, null, 2));
   else {
@@ -130,8 +152,11 @@ async function verifyPackCommand(args: string[]): Promise<void> {
     console.log(`Publisher: ${output.publisher}`);
     console.log(`Signature: ${output.signatureVerified ? "verified" : "not required"}`);
     console.log(`Artifact SHA-256: ${output.artifact.sha256}`);
-    console.log(`Execution enabled: no`);
+    console.log(`Execution policy: ${output.executionPolicyEnabled ? "enabled" : "disabled"}`);
+    console.log(`Execution admission: ${output.executionAdmitted ? "admitted" : evaluation.audit.admission.reasonCode}`);
+    console.log("Runtime execution: disabled in normal scans and GitHub Action execution");
     console.log(`Sandbox probe: ${sandbox ? (sandbox.eligible ? "eligible" : "rejected") : "not requested"}`);
+    if (auditOutput) console.log(`Audit record written to ${resolve(root, auditOutput)}`);
   }
 }
 

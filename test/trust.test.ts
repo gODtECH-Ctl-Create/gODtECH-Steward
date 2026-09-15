@@ -19,7 +19,14 @@ function basePolicy(publicKey: string): ExternalPackPolicy {
     requireSigned: true,
     allow: ["example.security-hygiene"],
     trustedPublishers: ["example-org"],
-    trustedKeys: { "ed25519:test-key-1": publicKey }
+    trustedKeys: { "ed25519:test-key-1": publicKey },
+    revokedPublishers: [],
+    revokedKeys: [],
+    execution: {
+      enabled: false,
+      trustedSourceRepositories: [],
+      pins: {}
+    }
   };
 }
 
@@ -41,6 +48,11 @@ async function createSignedPack(root: string): Promise<{ manifestPath: string; a
       sizeBytes: artifact.length,
       uri: "file:./pack.wasm"
     },
+    provenance: {
+      sourceRepository: "https://github.com/example-org/security-hygiene",
+      sourceCommit: "0123456789abcdef0123456789abcdef01234567",
+      builder: "github-actions/example-org/security-hygiene"
+    },
     capabilities: ["repository.read"],
     limits: { maxExecutionMs: 1000, maxMemoryMiB: 32, maxFindings: 100 },
     signature: { algorithm: "ed25519", value: "AA==" }
@@ -59,6 +71,16 @@ export async function run(): Promise<void> {
   assert.equal(verified.signatureVerified, true);
   assert.equal(verified.sizeBytes, EMPTY_WASM.length);
   assert.equal(verified.sandboxEligible, false);
+  assert.equal(verified.manifest.provenance?.sourceCommit, "0123456789abcdef0123456789abcdef01234567");
+
+  await assert.rejects(
+    () => verifyRulePack(manifestPath, artifactPath, { ...policy, revokedPublishers: ["example-org"] }),
+    /publisher is revoked/
+  );
+  await assert.rejects(
+    () => verifyRulePack(manifestPath, artifactPath, { ...policy, revokedKeys: ["ed25519:test-key-1"] }),
+    /signing key is revoked/
+  );
 
   await writeFile(artifactPath, Uint8Array.from([...EMPTY_WASM.slice(0, -1), 0x01]));
   await assert.rejects(() => verifyRulePack(manifestPath, artifactPath, policy), /SHA-256 mismatch/);

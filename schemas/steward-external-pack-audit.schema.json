@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gODtECH-Ctl-Create.github.io/gODtECH-Steward/schemas/steward-external-pack-audit.schema.json",
+  "title": "gODtECH Steward External Pack Audit Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "observedAt", "pack", "publisher", "artifact", "compatibility", "provenance", "verification", "admission"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "steward-external-pack-audit" },
+    "observedAt": { "type": "string", "format": "date-time" },
+    "pack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": ["string", "null"] },
+        "version": { "type": ["string", "null"] }
+      }
+    },
+    "publisher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "keyId"],
+      "properties": {
+        "id": { "type": ["string", "null"] },
+        "keyId": { "type": ["string", "null"] }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "sha256"],
+      "properties": {
+        "format": { "type": ["string", "null"] },
+        "sha256": { "type": ["string", "null"] }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleApi", "resultSchema"],
+      "properties": {
+        "ruleApi": { "type": ["integer", "null"] },
+        "resultSchema": { "type": ["integer", "null"] }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "sourceRepository", "sourceCommit", "builder"],
+      "properties": {
+        "present": { "type": "boolean" },
+        "sourceRepository": { "type": ["string", "null"] },
+        "sourceCommit": { "type": ["string", "null"] },
+        "builder": { "type": ["string", "null"] }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accepted", "signatureVerified", "reasonCode"],
+      "properties": {
+        "accepted": { "type": "boolean" },
+        "signatureVerified": { "type": "boolean" },
+        "reasonCode": { "type": "string" }
+      }
+    },
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested", "allowed", "reasonCode"],
+      "properties": {
+        "requested": { "type": "boolean" },
+        "allowed": { "type": "boolean" },
+        "reasonCode": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,14 +1,24 @@
 import { access, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { ConfigLoadResult, ExternalPackPolicy, ScanConfig, Severity } from "./types.js";
+import type { ConfigLoadResult, ExternalPackExecutionPin, ExternalPackPolicy, ScanConfig, Severity } from "./types.js";
 
 const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info"];
+const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+const SHA256 = /^[A-Fa-f0-9]{64}$/;
+const PACK_ID = /^[a-z0-9][a-z0-9._-]{1,127}$/;
 
 const DEFAULT_EXTERNAL_PACKS: ExternalPackPolicy = {
   requireSigned: true,
   allow: [],
   trustedPublishers: [],
-  trustedKeys: {}
+  trustedKeys: {},
+  revokedPublishers: [],
+  revokedKeys: [],
+  execution: {
+    enabled: false,
+    trustedSourceRepositories: [],
+    pins: {}
+  }
 };
 
 export const DEFAULT_CONFIG: ScanConfig = {
@@ -47,6 +57,21 @@ function normaliseTrustedKeys(value: unknown): Record<string, string> {
   return result;
 }
 
+function parseExecutionPins(value: unknown): Record<string, ExternalPackExecutionPin> {
+  if (value === undefined) return {};
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("externalPacks.execution.pins must be an object keyed by pack ID.");
+  const result: Record<string, ExternalPackExecutionPin> = {};
+  for (const [packId, rawPin] of Object.entries(value as Record<string, unknown>)) {
+    if (!PACK_ID.test(packId)) throw new Error(`Invalid external pack execution pin ID: ${packId}.`);
+    if (!rawPin || typeof rawPin !== "object" || Array.isArray(rawPin)) throw new Error(`Execution pin for ${packId} must be an object.`);
+    const pin = rawPin as Record<string, unknown>;
+    if (typeof pin.version !== "string" || !SEMVER.test(pin.version)) throw new Error(`Execution pin for ${packId} has an invalid version.`);
+    if (typeof pin.sha256 !== "string" || !SHA256.test(pin.sha256)) throw new Error(`Execution pin for ${packId} has an invalid sha256 digest.`);
+    result[packId] = { version: pin.version, sha256: pin.sha256.toLowerCase() };
+  }
+  return result;
+}
+
 function parseExternalPackPolicy(value: unknown): ExternalPackPolicy {
   if (value === undefined) return DEFAULT_EXTERNAL_PACKS;
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("externalPacks must be a JSON object.");
@@ -56,10 +81,45 @@ function parseExternalPackPolicy(value: unknown): ExternalPackPolicy {
   const allow = normaliseExcludes(raw.allow);
   const trustedPublishers = normaliseExcludes(raw.trustedPublishers);
   const trustedKeys = normaliseTrustedKeys(raw.trustedKeys);
+  const revokedPublishers = normaliseExcludes(raw.revokedPublishers);
+  const revokedKeys = normaliseExcludes(raw.revokedKeys);
+
+  const executionRaw = raw.execution === undefined ? {} : raw.execution;
+  if (!executionRaw || typeof executionRaw !== "object" || Array.isArray(executionRaw)) {
+    throw new Error("externalPacks.execution must be a JSON object.");
+  }
+  const executionObject = executionRaw as Record<string, unknown>;
+  const executionEnabled = executionObject.enabled ?? false;
+  if (typeof executionEnabled !== "boolean") throw new Error("externalPacks.execution.enabled must be a boolean.");
+  const trustedSourceRepositories = normaliseExcludes(executionObject.trustedSourceRepositories);
+  const pins = parseExecutionPins(executionObject.pins);
+
   if (requireSigned && trustedPublishers.length > 0 && Object.keys(trustedKeys).length === 0) {
     throw new Error("externalPacks.trustedKeys is required when signed external packs are trusted.");
   }
-  return { requireSigned, allow, trustedPublishers, trustedKeys };
+  if (executionEnabled && !requireSigned) {
+    throw new Error("externalPacks.execution.enabled requires externalPacks.requireSigned=true.");
+  }
+  if (executionEnabled && trustedSourceRepositories.length === 0) {
+    throw new Error("externalPacks.execution.trustedSourceRepositories must contain at least one source when execution is enabled.");
+  }
+  if (executionEnabled && Object.keys(pins).length === 0) {
+    throw new Error("externalPacks.execution.pins must contain at least one explicit version/digest pin when execution is enabled.");
+  }
+
+  return {
+    requireSigned,
+    allow,
+    trustedPublishers,
+    trustedKeys,
+    revokedPublishers,
+    revokedKeys,
+    execution: {
+      enabled: executionEnabled,
+      trustedSourceRepositories,
+      pins
+    }
+  };
 }
 
 function parseConfig(raw: unknown): ScanConfig {
