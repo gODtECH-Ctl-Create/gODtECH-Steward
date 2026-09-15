@@ -1,6 +1,6 @@
 <a name="readme-top"></a>
 
-[![gODtECH Steward repository health control room](./site/assets/steward-hero.svg)](https://godtech-ctl-create.github.io/gODtECH-Steward/)
+[![gODtECH Steward repository health control room](./site/assets/steward-hero.png)](https://godtech-ctl-create.github.io/gODtECH-Steward/)
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@godtech/steward"><img src="https://img.shields.io/npm/v/@godtech/steward?style=for-the-badge&label=npm" alt="npm version" /></a>
@@ -257,7 +257,6 @@ See [`docs/architecture.md`](docs/architecture.md), [`docs/rules.md`](docs/rules
 | `steward pack verify` | Verify trusted external pack artifacts without enabling normal-scan execution |
 
 ## 📍 Status
-
 **Published: v0.1.1**
 
 The public package includes the deterministic engine, CLI, GitHub Action, stable machine-readable contracts, safe remediation model, health deltas, FORGE evidence adapter, StackPilot integration boundary, trusted-pack verification foundation, and shared gODtECH CLI identity.
