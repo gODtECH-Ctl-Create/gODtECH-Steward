@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0 — 2026-09-15
+
 ### Added
 
 - Security-gated external rule runtime harness with bounded WebAssembly linear memory, execution timeout, input/output byte ceilings, pointer/range validation, and isolated worker execution.
@@ -14,10 +16,16 @@
 
 ### Changed
 
-- Distribution verification now also checks that the external rule API/runtime/worker/governance artifacts and governance schemas are present in the packaged npm archive.
+- Distribution verification now checks that the external rule API/runtime/worker/governance artifacts and governance schemas are present in the packaged npm archive.
 - External pack verification and execution admission are separate decisions; verification alone never enables execution.
 - Execution admission fails closed for revoked publishers/keys, missing or untrusted provenance, missing pins, version changes, and artifact-digest changes.
 - External executable rule packs remain disabled in normal scans and GitHub Action execution; the governance layer is an admission contract for any future opt-in execution surface.
+- README, GitHub Pages, release documentation, roadmap, and project state are aligned to the `v0.2.0` release line.
+
+### Security
+
+- External executable packs receive no network, process, arbitrary filesystem, environment/secret, repository-write, Git-mutation, or remediation capabilities.
+- A pack must pass verification, governance admission, exact version/digest pinning, and the bounded WASM runtime before any future opt-in execution surface may run it.
 
 ## 0.1.1 — 2026-09-14
 
