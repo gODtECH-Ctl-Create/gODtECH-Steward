@@ -1,8 +1,6 @@
 <a name="readme-top"></a>
 
-<p align="center">
-  <img src="./site/assets/steward-hero.svg" alt="gODtECH Steward repository health control room" width="100%" />
-</p>
+[![gODtECH Steward repository health control room](./site/assets/steward-hero.svg)](https://godtech-ctl-create.github.io/gODtECH-Steward/)
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@godtech/steward"><img src="https://img.shields.io/npm/v/@godtech/steward?style=for-the-badge&label=npm" alt="npm version" /></a>
