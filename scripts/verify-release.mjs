@@ -34,10 +34,16 @@ const required = [
   "dist/src/core/config.js",
   "dist/src/core/trust.js",
   "dist/src/core/wasm-sandbox.js",
+  "dist/src/core/external-pack-governance.js",
+  "dist/src/core/external-rule-api.js",
+  "dist/src/core/external-rule-runtime.js",
+  "dist/src/core/external-rule-worker.js",
   "schemas/steward-result.schema.json",
   "schemas/steward-forge-evidence.schema.json",
   "schemas/steward-rule-pack-manifest.schema.json",
   "schemas/steward-external-pack-policy.schema.json",
+  "schemas/steward-external-pack-audit.schema.json",
+  "schemas/steward-external-rule-api.schema.json",
 ];
 for (const path of required) assert(existsSync(resolve(path)), `Required release file is missing: ${path}`);
 
