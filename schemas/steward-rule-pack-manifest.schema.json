@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://gODtECH-Ctl-Create.github.io/gODtECH-Steward/schemas/steward-rule-pack-manifest.schema.json",
   "title": "gODtECH Steward Rule Pack Manifest",
-  "description": "Design-time contract for future trusted external gODtECH Steward rule packs. Presence of this schema does not enable external pack execution.",
+  "description": "Contract for trusted external gODtECH Steward rule packs. Optional provenance is covered by the manifest signature and is required for execution admission.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -73,6 +73,16 @@
           "minLength": 1,
           "maxLength": 2048
         }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceRepository", "sourceCommit", "builder"],
+      "properties": {
+        "sourceRepository": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "sourceCommit": { "type": "string", "pattern": "^[A-Fa-f0-9]{40}$" },
+        "builder": { "type": "string", "minLength": 1, "maxLength": 256 }
       }
     },
     "capabilities": {

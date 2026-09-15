@@ -32,11 +32,25 @@ export interface FileEntry {
   content?: string;
 }
 
+export interface ExternalPackExecutionPin {
+  version: string;
+  sha256: string;
+}
+
+export interface ExternalPackExecutionPolicy {
+  enabled: boolean;
+  trustedSourceRepositories: string[];
+  pins: Record<string, ExternalPackExecutionPin>;
+}
+
 export interface ExternalPackPolicy {
   requireSigned: boolean;
   allow: string[];
   trustedPublishers: string[];
   trustedKeys: Record<string, string>;
+  revokedPublishers: string[];
+  revokedKeys: string[];
+  execution: ExternalPackExecutionPolicy;
 }
 
 export interface ScanConfig {

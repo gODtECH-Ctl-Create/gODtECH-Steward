@@ -7,6 +7,12 @@ export const STEWARD_MANIFEST_SCHEMA_VERSION = 1 as const;
 export const STEWARD_RULE_API_VERSION = 1 as const;
 export const STEWARD_RESULT_SCHEMA_VERSION = 1 as const;
 
+export interface RulePackProvenance {
+  sourceRepository: string;
+  sourceCommit: string;
+  builder: string;
+}
+
 export interface RulePackManifest {
   $schema?: string;
   schemaVersion: number;
@@ -27,6 +33,7 @@ export interface RulePackManifest {
     sizeBytes: number;
     uri: string;
   };
+  provenance?: RulePackProvenance;
   capabilities: string[];
   limits: {
     maxExecutionMs: number;
@@ -84,6 +91,14 @@ export function parseRulePackManifest(raw: unknown): RulePackManifest {
   assertManifest(isBoundedInteger(artifact.sizeBytes, 1, 100 * 1024 * 1024), "invalid artifact.sizeBytes");
   assertManifest(typeof artifact.uri === "string" && artifact.uri.length > 0 && artifact.uri.length <= 2048, "invalid artifact.uri");
 
+  if (raw.provenance !== undefined) {
+    assertManifest(isRecord(raw.provenance), "provenance must be an object");
+    const provenance = raw.provenance;
+    assertManifest(typeof provenance.sourceRepository === "string" && provenance.sourceRepository.length > 0 && provenance.sourceRepository.length <= 2048, "invalid provenance.sourceRepository");
+    assertManifest(typeof provenance.sourceCommit === "string" && /^[A-Fa-f0-9]{40}$/.test(provenance.sourceCommit), "invalid provenance.sourceCommit");
+    assertManifest(typeof provenance.builder === "string" && provenance.builder.length > 0 && provenance.builder.length <= 256, "invalid provenance.builder");
+  }
+
   assertManifest(Array.isArray(raw.capabilities) && raw.capabilities.length >= 1 && raw.capabilities.every((value) => value === "repository.read"), "capabilities must contain only repository.read");
 
   assertManifest(isRecord(raw.limits), "limits must be an object");
@@ -130,6 +145,8 @@ export async function verifyRulePack(manifestPath: string, artifactPath: string,
 
   if (!policy.allow.includes(manifest.id)) throw new Error(`External rule pack is not allowed by policy: ${manifest.id}`);
   if (!policy.trustedPublishers.includes(manifest.publisher.id)) throw new Error(`External rule-pack publisher is not trusted: ${manifest.publisher.id}`);
+  if (policy.revokedPublishers.includes(manifest.publisher.id)) throw new Error(`External rule-pack publisher is revoked: ${manifest.publisher.id}`);
+  if (policy.revokedKeys.includes(manifest.publisher.keyId)) throw new Error(`External rule-pack signing key is revoked: ${manifest.publisher.keyId}`);
 
   const artifact = await readFile(absoluteArtifact);
   const metadata = await stat(absoluteArtifact);
