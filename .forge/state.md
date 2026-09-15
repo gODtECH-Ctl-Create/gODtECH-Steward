@@ -40,17 +40,19 @@ The package manifest ships the consumer-facing compiled engine under `dist/src`,
 
 ## Release state
 
-- Public npm package: `@godtech/steward@0.1.0`.
-- Git release: `v0.1.0`.
+- Public npm package: `@godtech/steward@0.1.1`.
+- Git release: `v0.1.1`.
+- `v0.1.1` includes the shared gODtECH CLI Identity integration and versioned external rule ABI from PR #36.
 - Release workflow uses npm Trusted Publishing and GitHub artifact attestations.
-- Package and GitHub Release were verified after the corrected tag-driven release run.
-- Windows end-user smoke test verified `steward.cmd --version`, help, scan, JSON output, and doctor flow.
+- GitHub Release assets include the package tarball, SHA-256 checksum file, and SPDX Software Bill of Materials (SBOM).
+- Windows package verification remains part of the distribution gate.
+- `MASTER` is ahead of the published release because PR #37 merged after `v0.1.1`.
 
 ## Trusted external rule-pack execution model
 
 Executable third-party packs remain disabled in normal scans and the GitHub Action.
 
-The accepted model now includes:
+The current source model includes:
 
 - versioned manifest and external rule ABI contracts;
 - SHA-256 artifact verification;
@@ -79,8 +81,9 @@ Arbitrary JavaScript/Node.js rule execution is not an accepted trust model. Exte
 - StackPilot adapter completed externally via `gODtECH-Ctl-Create/StackPilot#19`.
 - Trusted rule-pack verification milestone merged and verified.
 - External rule ABI/host contract merged through PR #36; issue #33 completed.
-- Release preparation, Windows distribution fix, release cleanup, and release-workflow ordering fix merged through PRs #27-#30.
-- Public `v0.1.0` release verified successfully.
+- Bounded WASM runtime and adversarial pack tests merged through PR #37; issue #34 completed.
+- Shared CLI Identity integration merged through PR #38.
+- Public `v0.1.1` release prepared through PR #39 and published successfully.
 
 ## Remaining product work
 

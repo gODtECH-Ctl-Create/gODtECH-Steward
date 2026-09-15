@@ -2,23 +2,23 @@
 
 This project uses a tag-driven release workflow for the public npm package `@godtech/steward`.
 
-## Release identity
-
-The first public release is:
+## Current public release
 
 ```text
 Package: @godtech/steward
-Version: 0.1.0
-Git tag: v0.1.0
+Version: 0.1.1
+Git tag: v0.1.1
 License: Apache-2.0
 Repository: https://github.com/gODtECH-Ctl-Create/gODtECH-Steward.git
 ```
 
 The tag must exactly match the version in `package.json`. The release workflow rejects mismatched tags.
 
-## One-time npm Trusted Publishing setup
+`MASTER` may contain work newer than the latest public release. Do not describe unreleased source changes as shipped npm behavior until a new release tag has completed successfully.
 
-Configure a Trusted Publisher for the npm package before creating the first release:
+## npm Trusted Publishing
+
+The package uses npm Trusted Publishing through GitHub Actions:
 
 ```text
 Provider: GitHub Actions
@@ -28,56 +28,57 @@ Workflow filename: publish.yml
 Environment: none
 ```
 
-The workflow requires OpenID Connect (OIDC) token permission and publishes with `npm publish --access public`. Current npm Trusted Publishing requires a recent npm CLI and Node.js 22.14.0 or newer; Steward's release workflow uses Node.js 24.x.
+The workflow requires OpenID Connect (OIDC) token permission and publishes with `npm publish --access public`. Steward's release workflow uses a recent Node.js/npm toolchain compatible with npm Trusted Publishing.
 
-Do not add an npm automation token to the repository for publishing. Trusted Publishing provides short-lived credentials and, for a public GitHub repository and public package, npm automatically generates package provenance attestations.
+Do not add a long-lived npm automation token to the repository for publishing. Trusted Publishing provides short-lived credentials and provenance support for the public package.
 
-Official references:
+## Versioning rule
 
-- https://docs.npmjs.com/trusted-publishers/
-- https://docs.npmjs.com/generating-provenance-statements/
+Before release:
+
+1. Choose the intended semantic version.
+2. Update `package.json` and `package-lock.json` to the same version.
+3. Update README/site/status/changelog release references.
+4. Keep unreleased features under `CHANGELOG.md` → `Unreleased` until the tag is published.
+5. Do not create the release tag until CI and distribution verification are green.
+
+The publish workflow is version-aware; release documentation must not hard-code a historical version into the release logic.
 
 ## Release sequence
 
 1. Merge the release-preparation pull request into `MASTER`.
 2. Confirm `MASTER` is green.
-3. Confirm the `package.json` version is `0.1.0`.
-4. Create the annotated release tag `v0.1.0` from the verified `MASTER` commit.
-5. Push the tag to GitHub.
-6. GitHub Actions runs `.github/workflows/publish.yml`.
-7. The workflow checks the package identity and tag, runs the full verification suite, runs package distribution verification, creates the npm tarball, generates `SHA256SUMS`, generates an SPDX SBOM, and creates signed artifact attestations.
-8. The workflow publishes the package using npm Trusted Publishing.
-9. The workflow verifies that `@godtech/steward@0.1.0` is available from the npm registry.
-10. The workflow creates the GitHub Release and attaches the tarball, checksum file, and SBOM.
+3. Confirm `package.json` and `package-lock.json` contain the intended version.
+4. Confirm `CHANGELOG.md`, README, Pages site, roadmap/state, and release notes distinguish published from unreleased work.
+5. Create an annotated tag `v<package.version>` from the reviewed `MASTER` commit.
+6. Push the tag to GitHub.
+7. GitHub Actions runs `.github/workflows/publish.yml`.
+8. The workflow validates the package identity and tag, runs release/package verification, builds the npm tarball, generates `SHA256SUMS`, generates an SPDX SBOM, and creates artifact attestations.
+9. The workflow publishes through npm Trusted Publishing.
+10. The workflow verifies that the exact package version is available from npm.
+11. The workflow creates the GitHub Release and attaches the tarball, checksum file, and SBOM.
 
-## Why the release is tag-driven
+## Why releases are tag-driven
 
 A release is a deliberate immutable version boundary. Normal branch pushes must never publish to npm.
 
-The publish workflow only responds to tags matching `v*`, and then independently verifies that the tag is exactly `v${package.version}` before publishing.
+The publish workflow responds to `v*` tags and independently verifies that the tag is exactly `v${package.version}` before publishing.
 
 ## Provenance and signing
 
-There are two complementary trust records:
-
 ### npm provenance
 
-npm Trusted Publishing uses OpenID Connect and automatically generates provenance for public packages published from supported public repositories. The provenance links the package to its source and build workflow.
+npm Trusted Publishing uses OpenID Connect and provides provenance that links the public package to its source and build workflow.
 
 ### GitHub artifact attestation
 
-The release workflow also creates a GitHub artifact attestation for the actual npm tarball using `actions/attest@v4`. A second attestation binds the tarball to its SPDX SBOM. GitHub's attestation service uses Sigstore-backed signing for these records.
+The release workflow creates GitHub artifact attestations for the npm tarball and its SPDX SBOM using the GitHub Actions attestation service.
 
-Official reference:
-
-- https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations
-- https://github.com/actions/attest
-
-This is intentionally keyless release signing. We are not inventing or storing a long-lived GPG private key in GitHub Actions.
+This is intentionally keyless release signing. Steward does not store a long-lived release-signing private key in GitHub Actions.
 
 ## Local release preflight
 
-Before creating the tag, run:
+Before creating a tag, run:
 
 ```bash
 npm ci
@@ -88,14 +89,14 @@ npm pack --silent
 npm sbom --sbom-format spdx > sbom.spdx.json
 ```
 
-`verify:release` checks package identity, repository URL, license, version, publish configuration, required release files, tag strategy, artifact attestation permissions, and the publish command.
+`verify:release` checks package identity, repository URL, license, version, publish configuration, required release files, tag strategy, artifact-attestation permissions, and the publish command.
 
 ## Release artifacts
 
-The GitHub Release should contain:
+The GitHub Release should contain the exact-version artifacts generated by the workflow:
 
 ```text
-@godtech/steward-0.1.0.tgz
+godtech-steward-<version>.tgz
 SHA256SUMS
 sbom.spdx.json
 ```
@@ -106,18 +107,14 @@ Consumers can verify the tarball digest locally with:
 sha256sum -c SHA256SUMS
 ```
 
-Consumers using the GitHub Command Line Interface (CLI) can additionally verify the artifact attestation published with the release. GitHub supports attestation verification through `gh attestation verify` and offline verification.
-
-Official reference:
-
-- https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/verify-attestations-offline
+Consumers using the GitHub CLI can additionally verify the GitHub artifact attestation.
 
 ## GitHub Action reference policy
 
-For production projects, prefer a release tag or exact commit SHA rather than `@MASTER`:
+For production projects, prefer a reviewed release tag or exact commit SHA rather than `@MASTER`:
 
 ```yaml
-- uses: gODtECH-Ctl-Create/gODtECH-Steward@v0.1.0
+- uses: gODtECH-Ctl-Create/gODtECH-Steward@v0.1.1
 ```
 
 For high-assurance environments, pin the Action to the exact release commit SHA and review the release artifacts before adoption.
@@ -127,9 +124,10 @@ For high-assurance environments, pin the Action to the exact release commit SHA 
 Do not publish until all of these are true:
 
 - `MASTER` passes Continuous Integration (CI).
-- `npm run verify:package` passes.
+- `npm run verify:package` passes on supported distribution platforms.
 - `npm run verify:release` passes for the intended tag.
 - Source and committed `dist/` remain consistent.
-- External executable rule packs remain disabled unless their separate release gates have been completed.
-- The npm Trusted Publisher is configured for `publish.yml`.
-- The exact release tag points at the reviewed source commit.
+- Public docs describe the intended release accurately and do not claim unreleased source behavior.
+- External executable rule packs remain disabled in normal workflows unless their separate security/governance gates and release decision have been completed.
+- npm Trusted Publishing is configured for `publish.yml`.
+- The exact annotated release tag points at the reviewed source commit.

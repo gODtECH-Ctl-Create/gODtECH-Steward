@@ -1,12 +1,12 @@
 <a name="readme-top"></a>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/gODtECH-Ctl-Create/gODtECH-Steward/MASTER/site/assets/steward-hero.svg" alt="gODtECH Steward repository health control room" width="100%" />
+  <img src="./site/assets/steward-hero.svg" alt="gODtECH Steward repository health control room" width="100%" />
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@godtech/steward"><img src="https://img.shields.io/npm/v/@godtech/steward?style=for-the-badge&label=npm" alt="npm version" /></a>
-  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.0"><img src="https://img.shields.io/badge/release-v0.1.0-8bffb0?style=for-the-badge&labelColor=0b0d12" alt="Steward v0.1.0 release" /></a>
+  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.1"><img src="https://img.shields.io/badge/release-v0.1.1-8bffb0?style=for-the-badge&labelColor=0b0d12" alt="Steward v0.1.1 release" /></a>
   <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/actions"><img src="https://img.shields.io/github/actions/workflow/status/gODtECH-Ctl-Create/gODtECH-Steward/ci.yml?branch=MASTER&style=for-the-badge&label=CI" alt="CI status" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-72e7ff?style=for-the-badge&labelColor=0b0d12" alt="Apache License 2.0" /></a>
 </p>
@@ -19,7 +19,7 @@
 <p align="center">
   <a href="https://godtech-ctl-create.github.io/gODtECH-Steward/">Website</a> ·
   <a href="https://www.npmjs.com/package/@godtech/steward">npm</a> ·
-  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.0">Release</a> ·
+  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.1">Release</a> ·
   <a href="#-quick-start">Quick start</a> ·
   <a href="#-what-steward-checks">What it checks</a> ·
   <a href="#-architecture">Architecture</a>
@@ -53,10 +53,10 @@ Steward is intentionally focused: it keeps repositories healthy without trying t
 
 ## 🚀 Quick start
 
-### Install from npm
+### Install the current public release
 
 ```bash
-npm install -g @godtech/steward@0.1.0
+npm install -g @godtech/steward@0.1.1
 steward --version
 ```
 
@@ -70,17 +70,7 @@ steward.cmd --version
 
 ```bash
 steward scan .
-```
-
-Machine-readable output:
-
-```bash
 steward scan . --json
-```
-
-Diagnostics:
-
-```bash
 steward doctor .
 ```
 
@@ -105,9 +95,9 @@ steward fix . --safe --dry-run
 | **Rule packs** | Versioned `core` and `security` packs with pack-level or rule-level disabling |
 | **Deltas** | Deterministic before/after health and finding changes |
 | **FORGE evidence** | Safe observed repository-health evidence for gODtECH FORGE workflows |
-| **Trusted packs** | Manifest, compatibility, digest, signature, policy, and WebAssembly (WASM) boundary verification |
+| **Trusted packs** | Manifest, compatibility, digest, signature, policy, WebAssembly boundary verification, and source-level runtime hardening |
 
-Steward deliberately does **not** delete uncertain files, rewrite architecture, or require artificial intelligence (AI) for deterministic repository facts.
+Steward deliberately does **not** delete uncertain files, rewrite architecture, or require artificial intelligence for deterministic repository facts.
 
 ## 🌀 How it works
 
@@ -130,7 +120,7 @@ Rules are read-only analyzers. Findings carry severity, confidence, remediation 
 
 `scan` never writes. `fix` refuses to modify files without `--safe`. `--dry-run` never writes. Security findings are observation-only.
 
-External executable rule packs are not part of the normal scan path. Their verification boundary is separate and fail-closed, with signed artifacts and WebAssembly (WASM) validation before any future execution capability.
+External executable rule packs are not part of the normal scan path. Verification, trust policy, WebAssembly isolation, resource limits, and execution governance remain separate security gates.
 
 ## 📦 GitHub Action
 
@@ -141,7 +131,7 @@ name: Steward
 
 on:
   pull_request:
-  push
+  push:
 
 permissions:
   contents: read
@@ -151,13 +141,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: gODtECH-Ctl-Create/gODtECH-Steward@v0.1.0
+      - uses: gODtECH-Ctl-Create/gODtECH-Steward@v0.1.1
 ```
 
 For machine-readable CI output:
 
 ```yaml
-      - uses: gODtECH-Ctl-Create/gODtECH-Steward@v0.1.0
+      - uses: gODtECH-Ctl-Create/gODtECH-Steward@v0.1.1
         with:
           args: '["scan", "--ci", "--json"]'
 ```
@@ -178,7 +168,7 @@ Compare against an earlier report:
 steward report . --output current.json --compare previous.json
 ```
 
-Export observed repository-health evidence for gODtECH FORGE (Framework for Orchestrated Reasoning, Governance & Engineering):
+Export observed repository-health evidence for gODtECH FORGE:
 
 ```bash
 steward forge-evidence . --output .steward-forge-evidence.json
@@ -188,7 +178,7 @@ Steward's evidence adapter reports observed repository facts only. It does not i
 
 ## 🔐 Trusted external rule packs
 
-External packs are verification-only in the current release line. Verification covers:
+The public `v0.1.1` line remains verification-first. Verification covers:
 
 ```text
 manifest schema
@@ -201,11 +191,11 @@ manifest schema
 + optional sandbox probe
 ```
 
-Arbitrary JavaScript or Node.js executable rule packages are not a supported trust mechanism. See [`docs/trusted-rule-packs.md`](docs/trusted-rule-packs.md).
+Current `MASTER` also contains the post-`v0.1.1` bounded WASM runtime hardening from PR #37: worker isolation, explicit memory ceilings, execution timeouts, input/output limits, pointer validation, and adversarial execution tests. Those post-release changes are **not claimed as part of the published `0.1.1` npm artifact**.
+
+Normal scans and the GitHub Action still do not automatically execute third-party packs. See [`docs/trusted-rule-packs.md`](docs/trusted-rule-packs.md) and [`docs/external-rule-api.md`](docs/external-rule-api.md).
 
 ## 🔗 gODtECH ecosystem
-
-Steward is independent, but it fits cleanly beside the other gODtECH tools:
 
 ```text
                     gODtECH FORGE
@@ -266,15 +256,15 @@ See [`docs/architecture.md`](docs/architecture.md), [`docs/rules.md`](docs/rules
 | `steward report` | Write JSON health reports and compare deltas |
 | `steward forge-evidence` | Export observed health evidence for FORGE |
 | `steward fix --safe` | Apply only explicitly supported safe fixes |
-| `steward pack verify` | Verify trusted external pack artifacts without enabling execution |
+| `steward pack verify` | Verify trusted external pack artifacts without enabling normal-scan execution |
 
 ## 📍 Status
 
-**v0.1.0 — Public release**
+**Published: v0.1.1**
 
-The deterministic engine, CLI, GitHub Action, npm distribution, stable machine-readable contracts, safe remediation model, before/after deltas, FORGE evidence adapter, StackPilot integration boundary, and trusted external-pack verification foundation are established.
+The public package includes the deterministic engine, CLI, GitHub Action, stable machine-readable contracts, safe remediation model, health deltas, FORGE evidence adapter, StackPilot integration boundary, trusted-pack verification foundation, and shared gODtECH CLI identity.
 
-External executable rule-pack loading remains intentionally disabled until its host API, resource accounting, provenance, auditability, revocation, and malicious-pack test gates are complete.
+**Current source:** `MASTER` is ahead of the published release and includes additional bounded external-WASM runtime hardening merged in PR #37. Governance/admission work continues separately before any dedicated opt-in third-party execution surface is considered.
 
 ## 📄 License
 
@@ -286,5 +276,5 @@ gODtECH Steward is available under the **Apache License 2.0**. See [`LICENSE`](L
   <strong>Keep your software healthy.</strong><br />
   <a href="https://www.npmjs.com/package/@godtech/steward">Install from npm</a> ·
   <a href="https://godtech-ctl-create.github.io/gODtECH-Steward/">Visit the website</a> ·
-  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.0">View v0.1.0</a>
+  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.1">View v0.1.1</a>
 </p>

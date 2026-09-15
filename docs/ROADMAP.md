@@ -30,21 +30,20 @@ Steward is not a second orchestration framework, project scaffolder, or autonomo
 - [x] Versioned no-import external rule execution ABI and deterministic snapshot/result contracts.
 - [x] Security-gated WASM runtime harness with bounded memory, timeout, payload limits, and adversarial tests.
 - [x] Public npm release with tag-driven provenance and artifact attestations.
-- [x] Product landing page prepared for GitHub Pages.
-- [x] Product README redesigned around the public release and end-user installation path.
+- [x] Product landing page deployed through GitHub Pages.
+- [x] Product README aligned with the public install path and ecosystem boundary.
 
 ## Near-term priorities
 
-- [ ] Complete structured audit, provenance, publisher/key revocation, compatibility/rollback, and explicit execution enablement before trusted external executable rule packs can run in normal workflows.
+- [ ] Complete #35: structured audit, provenance, publisher/key revocation, compatibility/rollback, and explicit execution enablement policy.
+- [ ] Keep third-party executable packs disabled in normal scans and the GitHub Action until the governance gate is complete and reviewed.
 - [ ] Improve signal quality where intentional test fixtures or documentation markers create noisy findings.
 - [ ] Add additional deterministic health checks only where evidence is strong and false-positive cost is low.
 - [ ] Expand language-aware analysis selectively, without turning Steward into a general-purpose static analyzer.
 
 ## Rule-pack architecture
 
-Rule packs are the canonical extension boundary for Steward's own analyzers. Built-in packs are versioned and selected deterministically. External executable packs remain disabled until trust, compatibility, provenance, audit, revocation, and explicit enablement rules are fully satisfied.
-
-Current built-in packs:
+Rule packs are the canonical extension boundary for Steward's analyzers. Built-in packs are versioned and selected deterministically.
 
 ```text
 core@2
@@ -59,30 +58,29 @@ security@1
   security
 ```
 
-The `core` pack was bumped from version 1 to version 2 because the rule inventory changed. Consumers can therefore distinguish the expanded deterministic health baseline from the previous pack behavior.
+External executable packs remain outside normal scans. The current source tree contains verification, ABI, and bounded-runtime layers, while governance/admission remains the final active gate.
 
 ## Trusted external rule-pack design
 
-The design requires these gates before any external executable rule runs in normal Steward workflows:
+The design requires these gates before a dedicated opt-in execution surface could be considered:
 
 1. Versioned manifest schema.
-2. Explicit Steward rule API compatibility.
+2. Exact Steward rule API/result schema compatibility.
 3. SHA-256 artifact integrity verification.
-4. Trusted publisher signature verification using Ed25519.
+4. Trusted Ed25519 publisher signature verification.
 5. Repository/user allow policy with fail-closed malformed configuration.
 6. Read-only capability boundary.
-7. WebAssembly (WASM) as the supported executable artifact format.
+7. WebAssembly as the supported executable artifact format.
 8. Bounded memory, execution time, input/output bytes, and finding output.
 9. No network, arbitrary filesystem, process, environment, or secret access.
-10. Structured audit output for accepted and rejected external packs.
-11. Publisher/key revocation and provenance policy.
+10. Structured audit output.
+11. Publisher/key revocation and signed provenance policy.
 12. Explicit execution enablement separate from verification.
+13. Compatibility and rollback behavior.
 
 Arbitrary JavaScript/Node.js executable rule packs are not a supported trust model. Remediation remains Steward-owned and finding-driven.
 
-## Trusted verification and runtime implementation
-
-The verification path remains:
+## Current verification/runtime path
 
 ```text
 manifest
@@ -92,79 +90,35 @@ manifest
   -> SHA-256 artifact match
   -> Ed25519 signature verification
   -> WASM validation
-  -> optional sandbox probe
+  -> optional sandbox admission probe
+  -> bounded runtime harness (source-level, not normal scan execution)
 ```
 
-The CLI surface is:
+The external rule ABI is versioned and no-import. Steward constructs a deterministic repository-relative JSON snapshot, exchanges bytes through module-owned linear memory, and validates returned findings fail-closed.
 
-```bash
-steward pack verify manifest.json --artifact pack.wasm
-steward pack verify manifest.json --artifact pack.wasm --sandbox --json
-```
+The source-level runtime harness requires explicit bounded linear memory, enforces memory ceilings, input/output limits and timeouts, rejects imports, validates pointer ranges, validates output JSON, enforces `maxFindings`, and is covered by adversarial executable fixtures.
 
-The accepted external rule ABI is versioned and no-import. Steward constructs a deterministic, repository-relative JSON snapshot, exchanges bytes through module-owned linear memory, and validates returned findings fail-closed.
+## FORGE and StackPilot
 
-The security-gated runtime harness additionally:
+**gODtECH FORGE** owns orchestration, benchmark framing, policy, and workflow decisions. Steward emits observed repository-health evidence through `steward forge-evidence` without fabricating benchmark identity, provider billing, or productivity claims.
 
-- requires one defined 32-bit linear memory with an explicit maximum;
-- rejects a declared maximum above the configured memory ceiling;
-- rejects oversized serialized input before worker startup;
-- compiles and executes inside an isolated worker with a hard timeout;
-- rejects all WASM imports before instantiation;
-- validates memory size before/after allocation and execution;
-- validates input/output pointer ranges;
-- rejects oversized output before copying bytes;
-- validates UTF-8 JSON and the external-result contract;
-- enforces `maxFindings`;
-- is exercised with adversarial executable fixtures.
-
-This harness is deliberately **not wired into `scan` or the GitHub Action**. External executable packs remain disabled until the audit/provenance/revocation/enablement gate is complete.
-
-Unsigned verification can be represented by policy, but the default policy requires signatures. Signed mode requires an explicit trusted Ed25519 public key for the declared publisher key ID. Malformed trust configuration fails closed for pack verification.
-
-## Deterministic health expansion
-
-The current core expansion focuses on evidence with low speculation:
-
-- package project identity and description checks;
-- version/license completeness for non-private packages;
-- tracked coverage and test-report artifacts;
-- tracked test/tool output directories;
-- common local build caches, TypeScript build-info files, and lint caches.
-
-Steward deliberately does not treat generic `dist/` or `build/` directories as disposable because some projects intentionally ship compiled output.
-
-## Scan evidence and deltas
-
-Every finding may expose a stable SHA-256 fingerprint derived from its identity and path. The fingerprint is intentionally independent of line number so the same issue remains correlated when code moves.
-
-`steward report . --output current.json --compare previous.json` produces a deterministic delta covering health change, added and resolved finding references, unchanged findings, severity changes, and category changes.
-
-Comparison output never copies source-file contents or secret values into delta evidence.
-
-## FORGE evidence adapter
-
-**gODtECH FORGE (Framework for Orchestrated Reasoning, Governance & Engineering)** owns orchestration and benchmark framing. Steward provides a separate `steward forge-evidence` artifact for observed repository-health evidence.
-
-The adapter deliberately does not fabricate FORGE benchmark fields such as benchmark IDs, control versus assisted runs, task framing, provider billing, or productivity claims. It carries the Steward scan contract into a safe evidence projection, including repository state, health, findings, rule packs, Continuous Integration (CI) outcome, and optional scan deltas.
-
-## StackPilot integration
-
-StackPilot may consume Steward's `schemaVersion: 1` scan result as an optional observational input. It owns scaffolding, golden paths, and its `readiness-v1` model. StackPilot does not execute Steward remediation or duplicate generic housekeeping rules.
+**StackPilot** owns scaffolding and `readiness-v1`. It may consume Steward's public scan contract observationally without duplicating generic housekeeping rules.
 
 ## Distribution validation
 
-The distribution gate builds the actual npm tarball, inspects the published file set, installs it into a clean consumer directory without registry access, executes both CLI aliases, validates the versioned JSON output, exercises `forge-evidence`, runs the packaged GitHub Action, and rejects malformed Action argument payloads.
+The distribution gate builds the npm tarball, inspects the published file set, installs it into a clean consumer directory without registry access, executes both CLI aliases, validates JSON output, exercises `forge-evidence`, runs the packaged GitHub Action, rejects malformed Action argument payloads, and verifies the external rule API/runtime worker artifacts are shipped.
 
-The package intentionally excludes the TypeScript source tree and `node_modules` while shipping the compiled engine required by package consumers, the Action runner, and the external-rule runtime worker.
+The package intentionally excludes the TypeScript source tree and `node_modules`.
 
 ## Release line
 
-The public release line currently identifies as version `0.1.0` and is published as `@godtech/steward@0.1.0` under the tag `v0.1.0`. Releases are tag-driven and use npm Trusted Publishing, GitHub artifact attestations, SHA-256 checksums, and an SPDX Software Bill of Materials (SBOM).
+The current public release is **`@godtech/steward@0.1.1`**, tagged **`v0.1.1`**. Releases are tag-driven and use npm Trusted Publishing, GitHub artifact attestations, SHA-256 checksums, and an SPDX Software Bill of Materials (SBOM).
+
+`MASTER` may be ahead of the public release. Post-release changes must stay identified as unreleased until a new reviewed tag is published.
 
 ## Product presentation
 
-The GitHub Pages site lives under `site/` and is intentionally static. The README and site should share the same verified release facts, install commands, safety boundary, and integration semantics.
+The GitHub Pages site lives under `site/`. README, Pages, changelog, release documentation, and project state should share the same verified release facts and distinguish published behavior from current-source work.
 
 ## gODtECH ecosystem
 
@@ -182,11 +136,6 @@ The GitHub Pages site lives under `site/` and is intentionally static. The READM
                          v
                    TARGET PROJECT
 ```
-
-- **gODtECH FORGE** may invoke Steward when repository-health evidence or safe maintenance is relevant.
-- **StackPilot** may optionally consume generic Steward findings while retaining its own golden-path semantics.
-- Steward remains independently useful without either product.
-- Integrations must use stable machine-readable contracts rather than private implementation imports.
 
 ## Non-goals
 
