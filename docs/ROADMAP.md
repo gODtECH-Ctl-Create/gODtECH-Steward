@@ -30,15 +30,14 @@ Steward is not a second orchestration framework, project scaffolder, or autonomo
 - [x] Versioned no-import external rule execution ABI and deterministic snapshot/result contracts.
 - [x] Security-gated WASM runtime harness with bounded memory, timeout, payload limits, and adversarial tests.
 - [x] Trusted-pack governance model with audit records, provenance, revocation, explicit execution policy, and exact version/digest pins.
-- [x] Public npm release with tag-driven provenance and artifact attestations.
+- [x] Parent trusted-pack security gate #24 completed after #33, #34, and #35.
+- [x] Public npm release pipeline with tag-driven provenance and artifact attestations.
 - [x] Product landing page deployed through GitHub Pages.
 - [x] Product README aligned with the public install path and ecosystem boundary.
 
 ## Near-term priorities
 
-- [ ] Merge and validate the #35 governance/admission implementation.
-- [ ] After #35, decide whether Steward should expose a dedicated opt-in external-pack execution surface; normal scans and the GitHub Action must not bypass governance or runtime gates.
-- [ ] Reassess parent issue #24 once #35 is merged.
+- [ ] Decide whether Steward should expose a dedicated opt-in external-pack execution surface; normal scans and the GitHub Action must not bypass governance or runtime gates.
 - [ ] Improve signal quality where intentional test fixtures or documentation markers create noisy findings.
 - [ ] Add additional deterministic health checks only where evidence is strong and false-positive cost is low.
 - [ ] Expand language-aware analysis selectively, without turning Steward into a general-purpose static analyzer.
@@ -60,7 +59,7 @@ security@1
   security
 ```
 
-External executable packs remain outside normal scans. The current source tree contains verification, ABI, bounded-runtime, and governance/admission layers. A dedicated execution surface would remain a separate explicit product decision.
+External executable packs remain outside normal scans. The `v0.2.0` release line contains verification, ABI, bounded-runtime, and governance/admission layers. A dedicated execution surface remains a separate explicit product decision.
 
 ## Trusted external rule-pack design
 
@@ -107,7 +106,7 @@ manifest
 
 The external rule ABI is versioned and no-import. Steward constructs a deterministic repository-relative JSON snapshot, exchanges bytes through module-owned linear memory, and validates returned findings fail-closed.
 
-The source-level runtime harness requires explicit bounded linear memory, enforces memory ceilings, input/output limits and timeouts, rejects imports, validates pointer ranges, validates output JSON, enforces `maxFindings`, and is covered by adversarial executable fixtures.
+The runtime harness requires explicit bounded linear memory, enforces memory ceilings, input/output limits and timeouts, rejects imports, validates pointer ranges, validates output JSON, enforces `maxFindings`, and is covered by adversarial executable fixtures.
 
 Verification and execution admission are separate decisions. A verified pack is never implicitly executable.
 
@@ -143,13 +142,13 @@ The package intentionally excludes the TypeScript source tree and `node_modules`
 
 ## Release line
 
-The current public release is **`@godtech/steward@0.1.1`**, tagged **`v0.1.1`**. Releases are tag-driven and use npm Trusted Publishing, GitHub artifact attestations, SHA-256 checksums, and an SPDX Software Bill of Materials (SBOM).
+The current public release is **`@godtech/steward@0.2.0`**, tagged **`v0.2.0`**. Releases are tag-driven and use npm Trusted Publishing, GitHub artifact attestations, SHA-256 checksums, and an SPDX Software Bill of Materials (SBOM).
 
-`MASTER` may be ahead of the public release. Post-release changes must stay identified as unreleased until a new reviewed tag is published.
+Post-release changes must stay identified as unreleased until a new reviewed tag is published.
 
 ## Product presentation
 
-The GitHub Pages site lives under `site/`. README, Pages, changelog, release documentation, and project state should share the same verified release facts and distinguish published behavior from current-source work.
+The GitHub Pages site lives under `site/`. README, Pages, changelog, release documentation, and project state should share the same verified release facts and distinguish published behavior from later source work.
 
 ## gODtECH ecosystem
 

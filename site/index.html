@@ -28,15 +28,15 @@
   <main id="main">
     <section id="top" class="hero container">
       <div class="hero-copy">
-        <div class="eyebrow"><span class="pulse"></span> Open source · Apache-2.0 · v0.1.1</div>
+        <div class="eyebrow"><span class="pulse"></span> Open source · Apache-2.0 · v0.2.0</div>
         <h1>Keep your repository healthy.<br><span>Know exactly what changed.</span></h1>
         <p class="hero-lede">gODtECH Steward turns software housekeeping into a repeatable engineering step. Scan deterministically, understand every finding, fix only what is safe, and keep a machine-readable trail of repository health.</p>
         <div class="hero-actions">
           <a class="button" href="#install">Install Steward</a>
-          <a class="button button-secondary" href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.1" rel="noreferrer">View v0.1.1 release</a>
+          <a class="button button-secondary" href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.2.0" rel="noreferrer">View v0.2.0 release</a>
         </div>
         <div class="signal-row" aria-label="Release facts">
-          <span><strong>0.1.1</strong> public release</span>
+          <span><strong>0.2.0</strong> public release</span>
           <span><strong>Deterministic</strong> findings</span>
           <span><strong>Safe by default</strong></span>
           <span><strong>GitHub Action</strong> included</span>
@@ -112,7 +112,7 @@
       <div class="container">
         <div class="section-heading split-heading">
           <div><span class="kicker">INSTALL</span><h2>One package. One command.</h2></div>
-          <p>Steward 0.1.1 is published to npm as <code>@godtech/steward</code>. The GitHub release carries the package tarball, checksum file, and Software Bill of Materials.</p>
+          <p>Steward 0.2.0 is published to npm as <code>@godtech/steward</code>. The GitHub release carries the package tarball, checksum file, and Software Bill of Materials.</p>
         </div>
         <div class="install-layout">
           <div class="install-guide card">
@@ -122,7 +122,7 @@
             </div>
             <div id="unix" class="tab-panel active" role="tabpanel">
               <p class="step-label">Install globally from npm</p>
-              <div class="codebox"><button class="copy" data-copy="npm install -g @godtech/steward@0.1.1">Copy</button><pre><code>npm install -g @godtech/steward@0.1.1</code></pre></div>
+              <div class="codebox"><button class="copy" data-copy="npm install -g @godtech/steward@0.2.0">Copy</button><pre><code>npm install -g @godtech/steward@0.2.0</code></pre></div>
               <p class="step-label">Scan a repository</p>
               <div class="codebox"><button class="copy" data-copy="steward scan .\nsteward doctor .\nsteward scan . --json">Copy</button><pre><code>steward scan .
 steward doctor .
@@ -130,14 +130,14 @@ steward scan . --json</code></pre></div>
             </div>
             <div id="windows" class="tab-panel" role="tabpanel" hidden>
               <p class="step-label">Install globally from npm</p>
-              <div class="codebox"><button class="copy" data-copy="npm.cmd install -g @godtech/steward@0.1.1">Copy</button><pre><code>npm.cmd install -g @godtech/steward@0.1.1</code></pre></div>
+              <div class="codebox"><button class="copy" data-copy="npm.cmd install -g @godtech/steward@0.2.0">Copy</button><pre><code>npm.cmd install -g @godtech/steward@0.2.0</code></pre></div>
               <div class="notice"><strong>PowerShell execution policy</strong><p>If PowerShell blocks the generated <code>steward.ps1</code> shim, use the command shim directly:</p><div class="codebox compact"><button class="copy" data-copy="steward.cmd --version\nsteward.cmd scan .">Copy</button><pre><code>steward.cmd --version
 steward.cmd scan .</code></pre></div></div>
             </div>
           </div>
           <aside class="release-card card">
             <span class="status-pill">PUBLIC RELEASE</span>
-            <h3>0.1.1</h3>
+            <h3>0.2.0</h3>
             <p>Deterministic software and repository housekeeping from gODtECH.</p>
             <dl>
               <div><dt>npm</dt><dd>@godtech/steward</dd></div>
@@ -145,18 +145,18 @@ steward.cmd scan .</code></pre></div></div>
               <div><dt>Integrity</dt><dd>SHA-256 + attestation</dd></div>
               <div><dt>License</dt><dd>Apache-2.0</dd></div>
             </dl>
-            <div class="release-links"><a class="text-link" href="https://www.npmjs.com/package/@godtech/steward" rel="noreferrer">Open npm package →</a><a class="text-link" href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.1" rel="noreferrer">Open GitHub release →</a></div>
+            <div class="release-links"><a class="text-link" href="https://www.npmjs.com/package/@godtech/steward" rel="noreferrer">Open npm package →</a><a class="text-link" href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.2.0" rel="noreferrer">Open GitHub release →</a></div>
           </aside>
         </div>
       </div>
     </section>
 
     <section id="trusted-packs" class="section container">
-      <div class="section-heading"><span class="kicker">TRUSTED EXTERNAL PACKS</span><h2>Verification first. Execution never implied.</h2><p>The published 0.1.1 release establishes signed pack verification and the versioned external rule API. Current source also contains post-release bounded WASM runtime hardening from PR #37. Normal scans and the GitHub Action still do not automatically execute third-party packs.</p></div>
+      <div class="section-heading"><span class="kicker">TRUSTED EXTERNAL PACKS</span><h2>Verification first. Execution never implied.</h2><p>The 0.2.0 release includes signed pack verification, the versioned no-import external rule API, bounded WASM runtime hardening, structured audit records, provenance, revocation, trusted-source policy, and exact version/digest execution pins. Normal scans and the GitHub Action still do not automatically execute third-party packs.</p></div>
       <div class="checks-grid">
-        <article class="check-card"><span>VERIFY</span><h3>Identity + integrity</h3><p>Manifest compatibility, allow policy, publisher trust, SHA-256 artifact verification, Ed25519 signatures, and WASM validation.</p></article>
-        <article class="check-card"><span>ISOLATE</span><h3>Bounded runtime</h3><p>Source-level runtime hardening includes worker isolation, explicit memory ceilings, timeouts, pointer validation, and output limits.</p></article>
-        <article class="check-card"><span>GOVERN</span><h3>Fail closed</h3><p>Execution remains separate from verification. Governance and audit gates must be satisfied before any future opt-in execution surface is considered.</p></article>
+        <article class="check-card"><span>VERIFY</span><h3>Identity + integrity</h3><p>Manifest compatibility, allow policy, publisher trust, revocation, SHA-256 artifact verification, Ed25519 signatures, provenance, and WASM validation.</p></article>
+        <article class="check-card"><span>ISOLATE</span><h3>Bounded runtime</h3><p>Worker isolation, explicit memory ceilings, timeouts, pointer/range validation, bounded input/output, and finding-count limits fail closed.</p></article>
+        <article class="check-card"><span>GOVERN</span><h3>Explicit admission</h3><p>Verification is separate from execution admission. Trusted source, provenance, execution enablement, and exact version/digest pins must all pass.</p></article>
       </div>
     </section>
 
@@ -190,7 +190,7 @@ steward.cmd scan .</code></pre></div></div>
 
   <footer class="footer container">
     <div><strong>gODtECH Steward</strong><span>Keep your software healthy.</span></div>
-    <div class="footer-links"><a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward">GitHub</a><a href="https://www.npmjs.com/package/@godtech/steward">npm</a><a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.1">v0.1.1</a></div>
+    <div class="footer-links"><a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward">GitHub</a><a href="https://www.npmjs.com/package/@godtech/steward">npm</a><a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.2.0">v0.2.0</a></div>
     <div class="footer-meta">Apache-2.0 · deterministic by design</div>
   </footer>
 </body>

@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@godtech/steward"><img src="https://img.shields.io/npm/v/@godtech/steward?style=for-the-badge&label=npm" alt="npm version" /></a>
-  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.1"><img src="https://img.shields.io/badge/release-v0.1.1-8bffb0?style=for-the-badge&labelColor=0b0d12" alt="Steward v0.1.1 release" /></a>
+  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.2.0"><img src="https://img.shields.io/badge/release-v0.2.0-8bffb0?style=for-the-badge&labelColor=0b0d12" alt="Steward v0.2.0 release" /></a>
   <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/actions"><img src="https://img.shields.io/github/actions/workflow/status/gODtECH-Ctl-Create/gODtECH-Steward/ci.yml?branch=MASTER&style=for-the-badge&label=CI" alt="CI status" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-72e7ff?style=for-the-badge&labelColor=0b0d12" alt="Apache License 2.0" /></a>
 </p>
@@ -17,7 +17,7 @@
 <p align="center">
   <a href="https://godtech-ctl-create.github.io/gODtECH-Steward/">Website</a> ·
   <a href="https://www.npmjs.com/package/@godtech/steward">npm</a> ·
-  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.1">Release</a> ·
+  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.2.0">Release</a> ·
   <a href="#-quick-start">Quick start</a> ·
   <a href="#-what-steward-checks">What it checks</a> ·
   <a href="#-architecture">Architecture</a>
@@ -54,7 +54,7 @@ Steward is intentionally focused: it keeps repositories healthy without trying t
 ### Install the current public release
 
 ```bash
-npm install -g @godtech/steward@0.1.1
+npm install -g @godtech/steward@0.2.0
 steward --version
 ```
 
@@ -93,7 +93,7 @@ steward fix . --safe --dry-run
 | **Rule packs** | Versioned `core` and `security` packs with pack-level or rule-level disabling |
 | **Deltas** | Deterministic before/after health and finding changes |
 | **FORGE evidence** | Safe observed repository-health evidence for gODtECH FORGE workflows |
-| **Trusted packs** | Manifest, compatibility, digest, signature, policy, WebAssembly boundary verification, and source-level runtime hardening |
+| **Trusted packs** | Manifest, compatibility, digest, signature, provenance, revocation, execution admission policy, and bounded WebAssembly runtime contracts |
 
 Steward deliberately does **not** delete uncertain files, rewrite architecture, or require artificial intelligence for deterministic repository facts.
 
@@ -139,13 +139,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: gODtECH-Ctl-Create/gODtECH-Steward@v0.1.1
+      - uses: gODtECH-Ctl-Create/gODtECH-Steward@v0.2.0
 ```
 
 For machine-readable CI output:
 
 ```yaml
-      - uses: gODtECH-Ctl-Create/gODtECH-Steward@v0.1.1
+      - uses: gODtECH-Ctl-Create/gODtECH-Steward@v0.2.0
         with:
           args: '["scan", "--ci", "--json"]'
 ```
@@ -176,22 +176,28 @@ Steward's evidence adapter reports observed repository facts only. It does not i
 
 ## 🔐 Trusted external rule packs
 
-The public `v0.1.1` line remains verification-first. Verification covers:
+The public `v0.2.0` line contains the complete trusted-pack security chain developed across #33, #34, and #35:
 
 ```text
 manifest schema
 + exact rule API compatibility
 + allowlist policy
 + trusted publisher
++ publisher / key revocation
 + SHA-256 artifact match
 + Ed25519 signature verification
-+ valid WASM module boundary
-+ optional sandbox probe
++ signed provenance
++ trusted source repository policy
++ exact version + digest execution pins
++ structured admission audit record
++ no-import WASM boundary
++ bounded memory / time / input / output / findings
++ isolated worker execution
 ```
 
-Current `MASTER` also contains the post-`v0.1.1` bounded WASM runtime hardening from PR #37: worker isolation, explicit memory ceilings, execution timeouts, input/output limits, pointer validation, and adversarial execution tests. Those post-release changes are **not claimed as part of the published `0.1.1` npm artifact**.
+Verification does **not** imply execution. Execution admission is a separate explicit policy decision and fails closed when provenance, trust, compatibility, revocation, or exact pin requirements are not satisfied.
 
-Normal scans and the GitHub Action still do not automatically execute third-party packs. See [`docs/trusted-rule-packs.md`](docs/trusted-rule-packs.md) and [`docs/external-rule-api.md`](docs/external-rule-api.md).
+Normal scans and the GitHub Action still do not automatically execute third-party packs. Any future opt-in execution surface must consume the same verification, governance, audit, and bounded-runtime layers rather than bypassing them. See [`docs/trusted-rule-packs.md`](docs/trusted-rule-packs.md) and [`docs/external-rule-api.md`](docs/external-rule-api.md).
 
 ## 🔗 gODtECH ecosystem
 
@@ -254,14 +260,15 @@ See [`docs/architecture.md`](docs/architecture.md), [`docs/rules.md`](docs/rules
 | `steward report` | Write JSON health reports and compare deltas |
 | `steward forge-evidence` | Export observed health evidence for FORGE |
 | `steward fix --safe` | Apply only explicitly supported safe fixes |
-| `steward pack verify` | Verify trusted external pack artifacts without enabling normal-scan execution |
+| `steward pack verify` | Verify trusted external pack artifacts and report governance admission without enabling normal-scan execution |
 
 ## 📍 Status
-**Published: v0.1.1**
 
-The public package includes the deterministic engine, CLI, GitHub Action, stable machine-readable contracts, safe remediation model, health deltas, FORGE evidence adapter, StackPilot integration boundary, trusted-pack verification foundation, and shared gODtECH CLI identity.
+**Published: v0.2.0**
 
-**Current source:** `MASTER` is ahead of the published release and includes additional bounded external-WASM runtime hardening merged in PR #37. Governance/admission work continues separately before any dedicated opt-in third-party execution surface is considered.
+The public package includes the deterministic engine, CLI, GitHub Action, stable machine-readable contracts, safe remediation model, health deltas, FORGE evidence adapter, StackPilot integration boundary, shared gODtECH CLI identity, trusted-pack verification, the bounded external-WASM runtime, structured audit records, provenance policy, publisher/key revocation, and exact version/digest execution-admission pins.
+
+External pack execution remains intentionally absent from normal scans and the GitHub Action. A future dedicated opt-in execution surface would be a separate reviewed product decision.
 
 ## 📄 License
 
@@ -273,5 +280,5 @@ gODtECH Steward is available under the **Apache License 2.0**. See [`LICENSE`](L
   <strong>Keep your software healthy.</strong><br />
   <a href="https://www.npmjs.com/package/@godtech/steward">Install from npm</a> ·
   <a href="https://godtech-ctl-create.github.io/gODtECH-Steward/">Visit the website</a> ·
-  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.1.1">View v0.1.1</a>
+  <a href="https://github.com/gODtECH-Ctl-Create/gODtECH-Steward/releases/tag/v0.2.0">View v0.2.0</a>
 </p>
