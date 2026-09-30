@@ -6,6 +6,7 @@ import { gitFacts } from "./git.js";
 import { enabledPackSummaries, enabledRules } from "./rules.js";
 import { scoreFindings } from "./score.js";
 import { findingFingerprint } from "./delta.js";
+const SEVERITY_ORDER = new Map([["critical", 0], ["high", 1], ["medium", 2], ["low", 3], ["info", 4]]);
 function categoryCounts(findings) { return findings.reduce((counts, finding) => { counts[finding.category] = (counts[finding.category] ?? 0) + 1; return counts; }, {}); }
 function ruleCounts(findings) { return findings.reduce((counts, finding) => { counts[finding.rule] = (counts[finding.rule] ?? 0) + 1; return counts; }, {}); }
 function scopedTrackedFiles(root, gitRoot, tracked) { if (!gitRoot || resolve(root) === resolve(gitRoot)) return new Set(tracked); const scoped = new Set(); for (const path of tracked) { const absolute = resolve(gitRoot, path); const relativePath = relative(root, absolute); const inside = relativePath === "" || (relativePath !== ".." && !relativePath.startsWith(`..${sep}`)); if (inside) scoped.add(normalisePath(relativePath)); } return scoped; }
