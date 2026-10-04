@@ -32,3 +32,12 @@ Before considering material work complete, evaluate the applicable checks:
 - README and documentation accuracy
 
 Never claim a check passed when it was not actually run.
+
+
+## gODtECH Cockpit State Synchronization
+
+This repository participates in the gODtECH Cockpit project graph.
+
+After meaningful development work, reconcile the repository with `.godtech/project.yml`. Update its state, priority, current focus, next step, blockers, status note, and last-worked date only when the evidence supports a change.
+
+Do not fabricate progress. Do not replace this repository's existing Forge/project state model; `.godtech/project.yml` is the compact Cockpit-facing snapshot.
